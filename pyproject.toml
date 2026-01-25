@@ -1,20 +1,24 @@
 [project]
 name = "local-talking-llm"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.2.0"
+description = "Local dictation tool - Wispr Flow alternative with offline speech-to-text"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "chatterbox-tts>=0.1.1",
-    "langchain-ollama>=0.3.3",
-    "langchain>=0.3.25",
-    "nltk>=3.9.1",
     "openai-whisper>=20240930",
-    "peft>=0.15.2",
-    "rich>=14.0.0",
-    "setuptools>=80.9.0",
     "sounddevice>=0.5.2",
-    "torchaudio>=2.6.0",
+    "numpy>=1.26.0",
+    "rich>=14.0.0",
+    "pynput>=1.7.6",
+    "pyperclip>=1.8.2",
+    "ollama>=0.4.0",
+    "rumps>=0.4.0",
+]
+
+[project.optional-dependencies]
+build = [
+    "py2app>=0.28.0,<0.28.9",
+    "setuptools>=69.0.0,<80",
 ]
 
 [dependency-groups]

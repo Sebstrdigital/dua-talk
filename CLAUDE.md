@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Local Talking LLM is a fully offline voice assistant that combines speech recognition, LLM processing, and text-to-speech synthesis. It operates entirely locally without cloud services or API keys.
+Local Dictation Tool is a minimal, fully offline dictation application that transcribes speech to clipboard using a global hotkey. It's a local alternative to Wispr Flow, using Whisper for speech-to-text.
 
 ## Development Commands
 
@@ -16,57 +16,101 @@ source .venv/bin/activate
 # Alternative: pip install
 pip install -e .
 
-# Download required NLTK data
-python -c "import nltk; nltk.download('punkt_tab')"
+# Run the dictation tool
+python dictation.py
 
-# Run the application
-python app.py
+# Run with LLM cleanup (requires Ollama)
+python dictation.py --cleanup
 
-# Run with voice cloning
-python app.py --voice path/to/voice_sample.wav
-
-# Run with custom settings
-python app.py --exaggeration 0.7 --cfg-weight 0.3 --model codellama
+# Run with different Whisper model
+python dictation.py --whisper-model small.en
 ```
 
 ## Prerequisites
 
-Ollama must be running locally with a model pulled:
+For basic dictation, no external services are required.
+
+For LLM cleanup feature, Ollama must be running locally:
 ```bash
 ollama pull gemma3
 ```
 
 ## Architecture
 
-The application follows a three-stage pipeline:
+The application follows a simple pipeline:
 
 ```
-User Speech → Whisper (STT) → Ollama LLM → ChatterBox (TTS) → Audio Output
+Hotkey (Shift+Ctrl) → Recording → Whisper STT → (optional LLM cleanup) → Clipboard
 ```
 
 ### Key Components
 
-- **app.py**: Main application orchestrating the voice assistant loop
-  - Records audio via `sounddevice`
-  - Transcribes with Whisper (`base.en` model)
-  - Gets LLM responses via LangChain + Ollama
-  - Synthesizes speech via ChatterBox TTS
-  - Includes dynamic emotion analysis that adjusts TTS expressiveness
+- **dictation.py**: Main application with global hotkey listener
+  - Global hotkey detection via `pynput`
+  - Audio recording via `sounddevice`
+  - Speech-to-text via Whisper
+  - Optional text cleanup via Ollama
+  - Clipboard integration via `pyperclip`
+  - Audio feedback (beeps) for user feedback
 
-- **tts.py**: `TextToSpeechService` wrapper around ChatterBox TTS
-  - `synthesize()`: Single sentence synthesis
-  - `long_form_synthesize()`: Multi-sentence with NLTK tokenization and 250ms silence between sentences
-  - Auto-detects device (CUDA/MPS/CPU)
-  - Patches `torch.load` for cross-device model loading
+### Audio Feedback
 
-### LangChain Setup
-
-Uses modern LCEL syntax with `ChatPromptTemplate`, `OllamaLLM`, and `RunnableWithMessageHistory` for session-aware conversations.
+- **600 Hz beep**: Recording started
+- **400 Hz beep**: Recording stopped (processing)
+- **800 Hz double beep**: Clipboard ready
 
 ## CLI Arguments
 
-- `--voice`: Audio file path for voice cloning
-- `--exaggeration`: Emotion intensity 0.0-1.0 (default: 0.5)
-- `--cfg-weight`: Pacing/delivery control 0.0-1.0 (default: 0.5)
-- `--model`: Ollama model name (default: gemma3)
-- `--save-voice`: Save generated audio to `voices/` directory
+- `--cleanup`: Use LLM to clean transcription (remove fillers, fix punctuation)
+- `--model`: Ollama model for cleanup (default: gemma3)
+- `--whisper-model`: Whisper model size (default: base.en)
+
+## Building the macOS App Bundle
+
+The app can be packaged as a standalone macOS menu bar application using py2app.
+
+### Install Build Dependencies
+
+```bash
+# Note: py2app 0.28.9+ has compatibility issues with newer setuptools
+uv pip install "py2app>=0.28.0,<0.28.9" "setuptools>=69.0.0,<80"
+# or
+pip install "py2app>=0.28.0,<0.28.9" "setuptools>=69.0.0,<80"
+```
+
+### Build Commands
+
+```bash
+# Development build (alias mode, fast, uses system Python)
+python setup.py py2app -A
+
+# Production build (standalone, includes all dependencies)
+python setup.py py2app
+```
+
+The built app will be at `dist/Dictation.app`.
+
+### Running the App
+
+```bash
+# Open the built app
+open dist/Dictation.app
+
+# Or run directly for development
+python dictation.py
+```
+
+### Menu Bar Features
+
+- **Icon states**: 🎤 (idle), 🔴 (recording), ⏳ (processing)
+- **Menu**: Start/Stop Recording, Toggle Cleanup, Quit
+- **Hotkey**: Shift+Ctrl still works for hands-free operation
+- **Notifications**: macOS notifications for status updates
+
+## macOS Permissions
+
+The app requires these permissions:
+- **Microphone**: For recording audio (System Preferences → Privacy & Security → Microphone)
+- **Accessibility**: For global hotkey detection (System Preferences → Privacy & Security → Accessibility)
+
+Add Terminal/IDE during development, or Dictation.app after building.
