@@ -2,11 +2,41 @@
 
 A minimal, fully offline dictation tool that runs as a macOS menu bar app. Transcribes speech to clipboard using a global hotkey and optionally formats output with a local LLM.
 
-## Implementations
+## Quick Start (Swift - Recommended)
 
-This repository contains two implementations:
-- **python/**: Python implementation using rumps, pynput, and Whisper
-- **DuaTalk/**: Native Swift/SwiftUI implementation
+```bash
+# Clone the repo
+git clone https://github.com/YOUR_USERNAME/dua-talk.git
+cd dua-talk/DuaTalk
+
+# Build and run
+swift build
+.build/debug/DuaTalk
+```
+
+The app will appear in your menu bar (🎤). First run will download the Whisper model.
+
+**Required permissions** (macOS will prompt you):
+- **Microphone** - for recording
+- **Accessibility** - for hotkeys (System Settings → Privacy & Security → Accessibility → add Terminal)
+
+**Default hotkey**: `Shift + Ctrl` to start/stop recording.
+
+## Quick Start (Python)
+
+```bash
+# Install uv (package manager)
+brew install uv
+
+# Clone and setup
+git clone https://github.com/YOUR_USERNAME/dua-talk.git
+cd dua-talk/python
+
+# Install and run
+uv sync
+source .venv/bin/activate
+python dua_talk.py
+```
 
 ## Features
 
@@ -16,72 +46,24 @@ This repository contains two implementations:
 - **Output Modes**: Raw transcription, general cleanup, or code prompt formatting
 - **Auto-paste**: Automatically pastes transcription after recording
 - **History**: Access your last 5 dictations from the menu
-- **Audio Feedback**: Beeps indicate recording start/stop
+- **Audio Feedback**: Sounds indicate recording start/stop
 
-## Python Installation
+## Implementations
 
-### Using uv (Recommended)
-
-```bash
-# Install uv if you haven't already
-curl -LsSf https://astral.sh/uv/install.sh | sh
-# or on macOS: brew install uv
-
-# Clone and setup
-git clone https://github.com/vndee/local-talking-llm.git
-cd local-talking-llm/python
-
-# Install dependencies and activate
-uv sync
-source .venv/bin/activate
-```
-
-### Using pip
-
-```bash
-git clone https://github.com/vndee/local-talking-llm.git
-cd local-talking-llm/python
-
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
-```
-
-## Running the Python App
-
-```bash
-cd python
-
-# Activate the virtual environment
-source .venv/bin/activate
-
-# Run the app
-python dua_talk.py
-
-# Run with a different Whisper model
-python dua_talk.py --whisper-model small.en
-```
-
-## Swift Installation
-
-```bash
-cd DuaTalk
-
-# Build with Swift Package Manager
-swift build
-
-# Or open in Xcode
-open DuaTalk.xcodeproj
-```
+This repository contains two implementations:
+- **DuaTalk/**: Native Swift/SwiftUI implementation (recommended)
+- **python/**: Python implementation using rumps, pynput, and Whisper
 
 ## macOS Permissions
 
-The app requires these permissions in **System Preferences → Privacy & Security**:
+The app requires these permissions in **System Settings → Privacy & Security**:
 
-- **Microphone**: For recording audio
-- **Accessibility**: For global hotkey detection and auto-paste
+| Permission | Why | How to Grant |
+|------------|-----|--------------|
+| **Microphone** | Recording audio | macOS will prompt on first use |
+| **Accessibility** | Global hotkeys + auto-paste | Manually add Terminal (or the .app) in System Settings |
 
-Add your terminal application during development. After building as an app bundle, add `Dua Talk.app`.
+**Important**: After granting Accessibility permission, you may need to restart the app.
 
 ## Hotkey Modes
 
@@ -100,11 +82,20 @@ Hotkeys can be customized via the Settings menu.
 | **General** | Yes | Removes fillers, fixes punctuation |
 | **Code Prompt** | Yes | Formats as prompts for AI coding assistants |
 
-For General and Code Prompt modes, install Ollama:
+For General and Code Prompt modes, install Ollama first:
 
 ```bash
+# Install Ollama (https://ollama.ai)
+brew install ollama
+
+# Start the Ollama service
+ollama serve &
+
+# Pull the required model
 ollama pull gemma3
 ```
+
+The app will automatically detect if Ollama is available and fall back to Raw mode if not.
 
 ## CLI Options
 
@@ -142,17 +133,41 @@ open "dist/Dua Talk.app"
 ## Troubleshooting
 
 ### Hotkey not working
-Ensure Accessibility permissions are granted to your terminal or the built app.
+1. Check Accessibility permission: System Settings → Privacy & Security → Accessibility
+2. Add Terminal (or the app) to the list
+3. Restart the app after granting permission
 
-### LLM modes not working
-Check that Ollama is running and the model is available:
+### No audio / Microphone not working
+1. Check Microphone permission: System Settings → Privacy & Security → Microphone
+2. Ensure your mic is selected as input device in System Settings → Sound
 
+### LLM modes not working (General/Code Prompt)
 ```bash
+# Check if Ollama is running
 ollama list
+
+# If not running, start it
+ollama serve &
+
+# Pull the model if missing
 ollama pull gemma3
+```
+
+### App won't start / Build fails
+```bash
+# Clean and rebuild (Swift)
+cd DuaTalk
+rm -rf .build
+swift build
+
+# For Python, recreate venv
+cd python
+rm -rf .venv
+uv sync
 ```
 
 ## Resources
 
 - [Whisper](https://github.com/openai/whisper) - OpenAI's speech recognition model
+- [WhisperKit](https://github.com/argmaxinc/WhisperKit) - Swift implementation used by the native app
 - [Ollama](https://ollama.ai) - Run LLMs locally
