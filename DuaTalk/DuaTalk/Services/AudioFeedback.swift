@@ -1,17 +1,22 @@
 import Foundation
 import AVFoundation
 
-/// Service for generating audio feedback beeps
+/// Service for generating audio feedback sounds
 final class AudioFeedback {
     private var audioEngine: AVAudioEngine?
     private var sourceNode: AVAudioSourceNode?
 
     private let sampleRate: Double = 44100
     private var phase: Double = 0
-    private var targetFrequency: Double = 0
     private var isPlaying = false
     private var samplesToPlay: Int = 0
     private var samplesPlayed: Int = 0
+    
+    // Sound parameters
+    private var startFrequency: Double = 0
+    private var endFrequency: Double = 0
+    private var attackSamples: Int = 0
+    private var decaySamples: Int = 0
 
     init() {
         setupAudioEngine()
@@ -33,9 +38,31 @@ final class AudioFeedback {
 
             for frame in 0..<Int(frameCount) {
                 if self.isPlaying && self.samplesPlayed < self.samplesToPlay {
-                    let value = Float(sin(self.phase) * 0.2)
+                    // Calculate progress (0 to 1)
+                    let progress = Double(self.samplesPlayed) / Double(self.samplesToPlay)
+                    
+                    // Frequency sweep (exponential for more natural sound)
+                    let frequency = self.startFrequency * pow(self.endFrequency / self.startFrequency, progress)
+                    
+                    // Envelope: attack then decay
+                    var envelope: Double
+                    if self.samplesPlayed < self.attackSamples {
+                        // Attack phase - quick fade in
+                        envelope = Double(self.samplesPlayed) / Double(self.attackSamples)
+                        envelope = envelope * envelope // Quadratic for smoother attack
+                    } else {
+                        // Decay phase - smooth fade out
+                        let decayProgress = Double(self.samplesPlayed - self.attackSamples) / Double(self.decaySamples)
+                        envelope = 1.0 - decayProgress
+                        envelope = envelope * envelope // Quadratic for smoother decay
+                    }
+                    
+                    // Generate sample with envelope
+                    let value = Float(sin(self.phase) * 0.25 * envelope)
                     ptr?[frame] = value
-                    self.phase += 2.0 * .pi * self.targetFrequency / self.sampleRate
+                    
+                    // Update phase
+                    self.phase += 2.0 * .pi * frequency / self.sampleRate
                     if self.phase > 2.0 * .pi {
                         self.phase -= 2.0 * .pi
                     }
@@ -61,23 +88,33 @@ final class AudioFeedback {
         }
     }
 
-    /// Play a tone at the specified frequency and duration
-    func playTone(frequency: Double, duration: Double) {
+    /// Play a frequency sweep with envelope
+    /// - Parameters:
+    ///   - startFreq: Starting frequency in Hz
+    ///   - endFreq: Ending frequency in Hz
+    ///   - duration: Total duration in seconds
+    ///   - attackTime: Attack time in seconds (fade in)
+    private func playBubble(startFreq: Double, endFreq: Double, duration: Double, attackTime: Double) {
         phase = 0
-        targetFrequency = frequency
+        startFrequency = startFreq
+        endFrequency = endFreq
         samplesToPlay = Int(sampleRate * duration)
+        attackSamples = Int(sampleRate * attackTime)
+        decaySamples = samplesToPlay - attackSamples
         samplesPlayed = 0
         isPlaying = true
     }
 
-    /// Beep when recording starts (350 Hz, 0.12s)
+    /// Rising "bloop" when recording starts
     func beepOn() {
-        playTone(frequency: 350, duration: 0.12)
+        // Rising bubble: low to high frequency, quick attack
+        playBubble(startFreq: 280, endFreq: 580, duration: 0.15, attackTime: 0.02)
     }
 
-    /// Beep when recording stops (280 Hz, 0.12s)
+    /// Descending "pop" when recording stops / transcription done
     func beepOff() {
-        playTone(frequency: 280, duration: 0.12)
+        // Falling pop: high to low frequency, quick attack
+        playBubble(startFreq: 520, endFreq: 320, duration: 0.12, attackTime: 0.015)
     }
 
     deinit {
