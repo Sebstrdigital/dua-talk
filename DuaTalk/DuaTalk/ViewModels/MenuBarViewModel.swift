@@ -17,14 +17,11 @@ enum AppState {
 final class MenuBarViewModel: ObservableObject {
     // State
     @Published var appState: AppState = .loading
-    @Published var isLLMReady = false
-    @Published var llmSetupManager = LLMSetupManager.shared
 
     // Services
     let configService: ConfigService
     private var cancellables = Set<AnyCancellable>()
     private let transcriber: Transcriber
-    private let llmService: LocalLLMService
     private let audioRecorder: AudioRecorder
     private let audioFeedback: AudioFeedback
     private let clipboardManager: ClipboardManager
@@ -38,12 +35,10 @@ final class MenuBarViewModel: ObservableObject {
 
     // Window controllers
     let hotkeyWindowController = HotkeyRecordingWindowController()
-    let customPromptWindowController = CustomPromptWindowController()
 
     init() {
         self.configService = ConfigService.shared
         self.transcriber = Transcriber(modelName: configService.whisperModel)
-        self.llmService = LocalLLMService()
         self.audioRecorder = AudioRecorder()
         self.audioFeedback = AudioFeedback()
         self.clipboardManager = ClipboardManager()
@@ -65,25 +60,6 @@ final class MenuBarViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Update isLLMReady and send download notifications
-        llmSetupManager.$status
-            .receive(on: RunLoop.main)
-            .sink { [weak self] (status: LLMSetupStatus) in
-                guard let self = self else { return }
-                switch status {
-                case .downloading(let progress) where progress == 0:
-                    self.sendNotification(title: "Downloading", body: "Enhanced Dictation model download started...")
-                case .downloaded:
-                    self.isLLMReady = true
-                    self.sendNotification(title: "Download Complete", body: "Enhanced Dictation model is ready to use.")
-                case .failed(let msg):
-                    self.sendNotification(title: "Download Failed", body: msg)
-                default:
-                    break
-                }
-            }
-            .store(in: &cancellables)
-
         // Start initialization automatically
         Task { @MainActor in
             await self.requestNotificationPermissions()
@@ -102,14 +78,6 @@ final class MenuBarViewModel: ObservableObject {
         let hasMicPermission = await AudioRecorder.checkPermission()
         if !hasMicPermission {
             sendNotification(title: "Permission Required", body: "Please grant Microphone access in System Preferences")
-        }
-
-        // Check if LLM model is downloaded
-        isLLMReady = llmService.isModelDownloaded
-
-        // If output mode requires LLM but model not downloaded, fall back to raw
-        if configService.outputMode.requiresLLM && !isLLMReady {
-            configService.outputMode = .raw
         }
 
         // Load Whisper model
@@ -166,11 +134,11 @@ final class MenuBarViewModel: ObservableObject {
         do {
             // Transcribe with selected language
             let language = configService.language
-            let rawText = try await transcriber.transcribe(samples, language: language.whisperCode)
+            let text = try await transcriber.transcribe(samples, language: language.whisperCode)
 
             // Check for silence/empty output from Whisper
             let silenceIndicators = ["[silence]", "[blank_audio]", "[no speech]", "(silence)", "[ silence ]"]
-            let lowerText = rawText.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            let lowerText = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
             if lowerText.isEmpty || silenceIndicators.contains(where: { lowerText.contains($0) }) {
                 sendNotification(title: "No Speech", body: "No speech detected in recording")
@@ -178,29 +146,7 @@ final class MenuBarViewModel: ObservableObject {
                 return
             }
 
-            // Format with LLM if needed
-            let outputMode = configService.outputMode
-            var finalText = rawText
-
-            if outputMode.requiresLLM && isLLMReady {
-                do {
-                    let custom = outputMode == .custom ? configService.customPrompt : nil
-                    finalText = try await llmService.format(text: rawText, mode: outputMode, language: language, customPrompt: custom)
-                } catch {
-                    AppLogger.llm.error("LLM formatting failed, using raw text: \(error.localizedDescription)")
-                    // Fall through to raw text
-                }
-            }
-
-            // Skip if LLM returned empty (silence detected)
-            if finalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                sendNotification(title: "No Speech", body: "No speech detected in recording")
-                appState = .idle
-                return
-            }
-
-            // Output
-            await outputText(finalText)
+            await outputText(text)
 
         } catch {
             sendNotification(title: "Error", body: error.localizedDescription)
@@ -226,42 +172,6 @@ final class MenuBarViewModel: ObservableObject {
     /// Paste a history item
     func pasteHistoryItem(_ item: HistoryItem) {
         clipboardManager.pasteText(item.text)
-    }
-
-    // MARK: - Output Mode
-
-    func setOutputMode(_ mode: OutputMode) {
-        if mode.requiresLLM && !isLLMReady {
-            sendNotification(
-                title: "Model Required",
-                body: "Download the Enhanced Dictation model first (Settings → Advanced or reopen onboarding)"
-            )
-            return
-        }
-
-        configService.outputMode = mode
-        sendNotification(title: "Mode Changed", body: "Now using \(mode.displayName) mode")
-    }
-
-    /// Open onboarding to download LLM model (has download progress UI)
-    func downloadLLMModel() {
-        OnboardingWindowController.shared.show()
-    }
-
-    /// Delete the downloaded LLM model
-    func deleteLLMModel() {
-        llmSetupManager.deleteModel()
-        isLLMReady = false
-        // Fall back to raw mode if current mode requires LLM
-        if configService.outputMode.requiresLLM {
-            configService.outputMode = .raw
-        }
-        sendNotification(title: "Model Deleted", body: "Enhanced Dictation model removed.")
-    }
-
-    /// Open the custom prompt editor window
-    func editCustomPrompt() {
-        customPromptWindowController.show(configService: configService)
     }
 
     // MARK: - Hotkey Mode

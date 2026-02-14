@@ -207,7 +207,6 @@ struct OnboardingView: View {
     let onDismiss: () -> Void
 
     @StateObject private var ttsSetup = TTSSetupManager()
-    @ObservedObject private var llmSetup = LLMSetupManager.shared
     @State private var micStatus: PermissionStatus = .unknown
     @State private var accessibilityStatus: Bool = false
 
@@ -258,14 +257,7 @@ struct OnboardingView: View {
                     subtitle: "Required for hotkeys and auto-paste"
                 ) { accessibilityStatusView }
 
-                // 3. Enhanced Dictation (LLM)
-                setupRow(
-                    icon: "brain",
-                    title: "Enhanced Dictation",
-                    subtitle: "Optional — clean up speech with AI"
-                ) { llmStatusView }
-
-                // 4. TTS
+                // 3. TTS
                 setupRow(
                     icon: "speaker.wave.2.fill",
                     title: "Text-to-Speech",
@@ -354,48 +346,6 @@ struct OnboardingView: View {
         } else {
             Button("Open Settings") { openSystemPrefs("Privacy_Accessibility") }
                 .controlSize(.small)
-        }
-    }
-
-    @ViewBuilder
-    private var llmStatusView: some View {
-        switch llmSetup.status {
-        case .notDownloaded:
-            VStack(alignment: .trailing, spacing: 2) {
-                Button("Download") { llmSetup.download() }
-                    .controlSize(.small)
-                Text("~2.5 GB download | ~3 GB RAM")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-        case .downloading(let progress):
-            VStack(alignment: .trailing, spacing: 2) {
-                HStack(spacing: 6) {
-                    ProgressView(value: progress)
-                        .frame(width: 60)
-                    Text("\(Int(progress * 100))%")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .frame(width: 32, alignment: .trailing)
-                }
-                Button("Cancel") { llmSetup.cancel() }
-                    .controlSize(.mini)
-                    .buttonStyle(.plain)
-                    .foregroundColor(.secondary)
-            }
-        case .downloaded:
-            Label("Ready", systemImage: "checkmark.circle.fill")
-                .foregroundColor(.green)
-                .font(.caption)
-        case .failed(let msg):
-            VStack(alignment: .trailing, spacing: 2) {
-                Button("Retry") { llmSetup.download() }
-                    .controlSize(.small)
-                Text(msg)
-                    .font(.caption2)
-                    .foregroundColor(.red)
-                    .lineLimit(1)
-            }
         }
     }
 
