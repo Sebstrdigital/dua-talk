@@ -5,5 +5,12 @@ DerivedData/
 *.xcodeproj/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
 
+# Whisper model files (bundled at release time, not in source)
+*.mlmodelc
+WhisperModels/
+
+# LLM model files
+*.gguf
+
 # macOS
 .DS_Store

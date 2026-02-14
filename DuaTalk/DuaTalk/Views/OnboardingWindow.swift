@@ -25,10 +25,10 @@ final class OnboardingWindowController {
         }
 
         let hostingView = NSHostingView(rootView: contentView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 500, height: 520)
+        hostingView.frame = NSRect(x: 0, y: 0, width: 500, height: 580)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 520),
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 580),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -57,18 +57,24 @@ final class OnboardingWindowController {
 
 enum TTSSetupStatus: Equatable {
     case notInstalled
-    case installing
+    case installing(step: String)
     case installed
     case failed(String)
+
+    /// Whether setup is in progress
+    var isInstalling: Bool {
+        if case .installing = self { return true }
+        return false
+    }
 }
 
 @MainActor
 final class TTSSetupManager: ObservableObject {
     @Published var status: TTSSetupStatus = .notInstalled
 
-    private static let duatalkDir = NSHomeDirectory() + "/.duatalk"
-    private static let venvPython = duatalkDir + "/venv/bin/python"
-    private static let serverScript = duatalkDir + "/kokoro_server.py"
+    private static let appSupportDir = AppPaths.appSupport
+    private static let venvPython = AppPaths.venvPython
+    private static let serverScript = AppPaths.kokoroServerScript
 
     init() {
         checkExisting()
@@ -82,8 +88,8 @@ final class TTSSetupManager: ObservableObject {
     }
 
     func install() {
-        guard status != .installing else { return }
-        status = .installing
+        guard !status.isInstalling else { return }
+        status = .installing(step: "Preparing...")
 
         Task {
             do {
@@ -97,9 +103,9 @@ final class TTSSetupManager: ObservableObject {
 
     private func runSetup() async throws {
         let fm = FileManager.default
-        let dir = Self.duatalkDir
+        let dir = Self.appSupportDir
 
-        // Create ~/.duatalk if needed
+        // Create app support dir if needed
         if !fm.fileExists(atPath: dir) {
             try fm.createDirectory(atPath: dir, withIntermediateDirectories: true)
         }
@@ -119,10 +125,12 @@ final class TTSSetupManager: ObservableObject {
         // Create venv
         let venvPath = dir + "/venv"
         if !fm.fileExists(atPath: venvPath) {
+            status = .installing(step: "Preparing...")
             try await runProcess(pythonPath, arguments: ["-m", "venv", venvPath])
         }
 
-        // Install packages
+        // Install packages (this can take several minutes)
+        status = .installing(step: "Downloading voice engine...")
         let pip = venvPath + "/bin/pip"
         try await runProcess(pip, arguments: ["install", "kokoro", "soundfile", "numpy"])
     }
@@ -148,25 +156,33 @@ final class TTSSetupManager: ObservableObject {
     }
 
     private func runProcess(_ path: String, arguments: [String]) async throws {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: path)
-        process.arguments = arguments
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = Pipe()
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: path)
+            process.arguments = arguments
+            process.standardOutput = FileHandle.nullDevice
+            let stderrPipe = Pipe()
+            process.standardError = stderrPipe
 
-        try process.run()
-        process.waitUntilExit()
-
-        if process.terminationStatus != 0 {
-            var errorMsg = "Exit code \(process.terminationStatus)"
-            if let pipe = process.standardError as? Pipe {
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                if let stderr = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-                   !stderr.isEmpty {
-                    errorMsg = String(stderr.suffix(200))
+            process.terminationHandler = { proc in
+                if proc.terminationStatus == 0 {
+                    continuation.resume()
+                } else {
+                    var errorMsg = "Exit code \(proc.terminationStatus)"
+                    let data = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                    if let stderr = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                       !stderr.isEmpty {
+                        errorMsg = String(stderr.suffix(200))
+                    }
+                    continuation.resume(throwing: SetupError.commandFailed(errorMsg))
                 }
             }
-            throw SetupError.commandFailed(errorMsg)
+
+            do {
+                try process.run()
+            } catch {
+                continuation.resume(throwing: error)
+            }
         }
     }
 
@@ -191,6 +207,7 @@ struct OnboardingView: View {
     let onDismiss: () -> Void
 
     @StateObject private var ttsSetup = TTSSetupManager()
+    @ObservedObject private var llmSetup = LLMSetupManager.shared
     @State private var micStatus: PermissionStatus = .unknown
     @State private var accessibilityStatus: Bool = false
 
@@ -241,7 +258,14 @@ struct OnboardingView: View {
                     subtitle: "Required for hotkeys and auto-paste"
                 ) { accessibilityStatusView }
 
-                // 3. TTS
+                // 3. Enhanced Dictation (LLM)
+                setupRow(
+                    icon: "brain",
+                    title: "Enhanced Dictation",
+                    subtitle: "Optional — clean up speech with AI"
+                ) { llmStatusView }
+
+                // 4. TTS
                 setupRow(
                     icon: "speaker.wave.2.fill",
                     title: "Text-to-Speech",
@@ -271,7 +295,7 @@ struct OnboardingView: View {
             .padding(.horizontal, 32)
             .padding(.bottom, 24)
         }
-        .frame(width: 500, height: 520)
+        .frame(width: 500, height: 580)
         .onAppear {
             checkPermissions()
         }
@@ -334,18 +358,63 @@ struct OnboardingView: View {
     }
 
     @ViewBuilder
+    private var llmStatusView: some View {
+        switch llmSetup.status {
+        case .notDownloaded:
+            VStack(alignment: .trailing, spacing: 2) {
+                Button("Download") { llmSetup.download() }
+                    .controlSize(.small)
+                Text("~2.5 GB download | ~3 GB RAM")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+        case .downloading(let progress):
+            VStack(alignment: .trailing, spacing: 2) {
+                HStack(spacing: 6) {
+                    ProgressView(value: progress)
+                        .frame(width: 60)
+                    Text("\(Int(progress * 100))%")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(width: 32, alignment: .trailing)
+                }
+                Button("Cancel") { llmSetup.cancel() }
+                    .controlSize(.mini)
+                    .buttonStyle(.plain)
+                    .foregroundColor(.secondary)
+            }
+        case .downloaded:
+            Label("Ready", systemImage: "checkmark.circle.fill")
+                .foregroundColor(.green)
+                .font(.caption)
+        case .failed(let msg):
+            VStack(alignment: .trailing, spacing: 2) {
+                Button("Retry") { llmSetup.download() }
+                    .controlSize(.small)
+                Text(msg)
+                    .font(.caption2)
+                    .foregroundColor(.red)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    @ViewBuilder
     private var ttsStatusView: some View {
         switch ttsSetup.status {
         case .notInstalled:
             Button("Set Up") { ttsSetup.install() }
                 .controlSize(.small)
-        case .installing:
-            HStack(spacing: 6) {
-                ProgressView()
-                    .controlSize(.small)
-                Text("Setting up...")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+        case .installing(let step):
+            VStack(alignment: .trailing, spacing: 2) {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(step)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
             }
         case .installed:
             Label("Ready", systemImage: "checkmark.circle.fill")

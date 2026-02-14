@@ -68,6 +68,25 @@ mkdir -p "${EXPORT_PATH}"
 cp -R "${APP_PATH}" "${EXPORT_PATH}/${APP_NAME}.app"
 APP_EXPORT="${EXPORT_PATH}/${APP_NAME}.app"
 
+# Step 2b: Bundle Whisper small model into the app
+WHISPER_MODEL_NAME="openai_whisper-small"
+WHISPER_MODEL_SRC="${HOME}/Documents/huggingface/models/argmaxinc/whisperkit-coreml/${WHISPER_MODEL_NAME}"
+WHISPER_MODEL_DEST="${APP_EXPORT}/Contents/Resources/WhisperModels/${WHISPER_MODEL_NAME}"
+
+if [ ! -d "${WHISPER_MODEL_SRC}" ]; then
+    echo "ERROR: Whisper small model not found at ${WHISPER_MODEL_SRC}"
+    echo ""
+    echo "Download it first by running the app in dev mode (swift build && .build/debug/DuaTalk)"
+    echo "or manually download from HuggingFace:"
+    echo "  huggingface-cli download argmaxinc/whisperkit-coreml openai_whisper-small --local-dir ~/Documents/huggingface/models/argmaxinc/whisperkit-coreml"
+    exit 1
+fi
+
+echo "==> Bundling Whisper small model..."
+mkdir -p "$(dirname "${WHISPER_MODEL_DEST}")"
+cp -R "${WHISPER_MODEL_SRC}" "${WHISPER_MODEL_DEST}"
+echo "    Model bundled ($(du -sh "${WHISPER_MODEL_DEST}" | cut -f1) total)"
+
 # Strip extended attributes that break code signing
 # (WhisperKit's swift-transformers_Hub.bundle gets com.apple.FinderInfo xattrs)
 echo "==> Stripping extended attributes..."

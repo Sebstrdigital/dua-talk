@@ -12,7 +12,7 @@ final class Transcriber: ObservableObject {
     private var whisperKit: WhisperKit?
     private let modelName: String
 
-    init(modelName: String = "base.en") {
+    init(modelName: String = "small") {
         self.modelName = modelName
     }
 
@@ -25,13 +25,25 @@ final class Transcriber: ObservableObject {
         errorMessage = nil
 
         do {
-            whisperKit = try await WhisperKit(
-                model: modelName,
-                verbose: false,
-                prewarm: true,
-                load: true,
-                download: true
-            )
+            if let bundledPath = getBundledModelPath() {
+                AppLogger.transcription.info("Loading bundled model from \(bundledPath)")
+                whisperKit = try await WhisperKit(
+                    modelFolder: bundledPath,
+                    verbose: false,
+                    prewarm: true,
+                    load: true,
+                    download: false
+                )
+            } else {
+                AppLogger.transcription.info("Downloading model: \(self.modelName)")
+                whisperKit = try await WhisperKit(
+                    model: modelName,
+                    verbose: false,
+                    prewarm: true,
+                    load: true,
+                    download: true
+                )
+            }
             isReady = true
             loadingProgress = 1.0
         } catch {
@@ -40,6 +52,13 @@ final class Transcriber: ObservableObject {
         }
 
         isLoading = false
+    }
+
+    /// Check for a bundled model in the app's Resources
+    private func getBundledModelPath() -> String? {
+        guard let resourcePath = Bundle.main.resourcePath else { return nil }
+        let modelPath = "\(resourcePath)/WhisperModels/openai_whisper-\(modelName)"
+        return FileManager.default.fileExists(atPath: modelPath) ? modelPath : nil
     }
 
     /// Transcribe audio samples

@@ -33,7 +33,10 @@ struct MenuBarView: View {
 
             Divider()
 
-            // Quit
+            Button("Setup...") {
+                OnboardingWindowController.shared.show()
+            }
+
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }
@@ -117,7 +120,7 @@ struct AdvancedMenu: View {
     @ObservedObject var viewModel: MenuBarViewModel
 
     private var currentModel: WhisperModel {
-        WhisperModel(rawValue: viewModel.configService.whisperModel) ?? .base
+        WhisperModel(rawValue: viewModel.configService.whisperModel) ?? .small
     }
 
     var body: some View {
@@ -126,9 +129,7 @@ struct AdvancedMenu: View {
             Menu("Mode: \(viewModel.configService.outputMode.displayName)") {
                 ForEach(OutputMode.allCases, id: \.self) { mode in
                     Button(action: {
-                        Task {
-                            await viewModel.setOutputMode(mode)
-                        }
+                        viewModel.setOutputMode(mode)
                     }) {
                         HStack {
                             Text(mode.displayName)
@@ -138,6 +139,24 @@ struct AdvancedMenu: View {
                             }
                         }
                     }
+                }
+            }
+
+            // Edit Custom Prompt
+            Button("Edit Custom Prompt...") {
+                viewModel.editCustomPrompt()
+            }
+
+            // LLM status
+            if viewModel.isLLMReady {
+                Text("LLM: Ready")
+                    .foregroundColor(.secondary)
+                Button("Delete Model...") {
+                    viewModel.deleteLLMModel()
+                }
+            } else {
+                Button("Download Enhanced Dictation Model...") {
+                    viewModel.downloadLLMModel()
                 }
             }
 
