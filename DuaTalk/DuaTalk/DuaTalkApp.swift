@@ -2,12 +2,7 @@ import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if !UserDefaults.standard.bool(forKey: "hasLaunchedBefore") {
-            UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
-            OnboardingWindowController.shared.show()
-        }
-
-        // Copy bundled kokoro_server.py to ~/.duatalk/ if missing
+        // Copy bundled kokoro_server.py to Application Support if missing
         copyBundledServerScript()
     }
 
@@ -18,8 +13,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func copyBundledServerScript() {
         let fm = FileManager.default
-        let duatalkDir = NSHomeDirectory() + "/.duatalk"
-        let dest = duatalkDir + "/kokoro_server.py"
+        let dest = AppPaths.kokoroServerScript
 
         guard !fm.fileExists(atPath: dest),
               let bundled = Bundle.main.path(forResource: "kokoro_server", ofType: "py") else {
@@ -27,8 +21,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         do {
-            if !fm.fileExists(atPath: duatalkDir) {
-                try fm.createDirectory(atPath: duatalkDir, withIntermediateDirectories: true)
+            let dir = AppPaths.appSupport
+            if !fm.fileExists(atPath: dir) {
+                try fm.createDirectory(atPath: dir, withIntermediateDirectories: true)
             }
             try fm.copyItem(atPath: bundled, toPath: dest)
         } catch {

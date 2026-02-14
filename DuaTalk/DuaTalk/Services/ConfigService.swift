@@ -122,10 +122,13 @@ final class ConfigService: ObservableObject {
         }
     }
 
-    var llmModel: String {
-        get { config.llmModel }
+    // MARK: - Custom Prompt
+
+    var customPrompt: String {
+        get { config.customPrompt }
         set {
-            config.llmModel = newValue
+            config.customPrompt = newValue
+            objectWillChange.send()
             save()
         }
     }

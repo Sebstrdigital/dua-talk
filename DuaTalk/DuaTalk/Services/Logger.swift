@@ -6,5 +6,6 @@ enum AppLogger {
     static let config = Logger(subsystem: "com.duatalk", category: "config")
     static let transcription = Logger(subsystem: "com.duatalk", category: "transcription")
     static let tts = Logger(subsystem: "com.duatalk", category: "tts")
+    static let llm = Logger(subsystem: "com.duatalk", category: "llm")
     static let general = Logger(subsystem: "com.duatalk", category: "general")
 }

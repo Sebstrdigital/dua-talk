@@ -10,26 +10,6 @@ enum AppState {
     case recording
     case processing
     case speaking
-
-    var icon: String {
-        switch self {
-        case .idle: return "mic"
-        case .loading: return "hourglass"
-        case .recording: return "record.circle.fill"
-        case .processing: return "hourglass"
-        case .speaking: return "speaker.wave.2.fill"
-        }
-    }
-
-    var iconEmoji: String {
-        switch self {
-        case .idle: return "🎤"
-        case .loading: return "⏳"
-        case .recording: return "🔴"
-        case .processing: return "⏳"
-        case .speaking: return "🔊"
-        }
-    }
 }
 
 /// ViewModel for the menu bar app
@@ -37,13 +17,14 @@ enum AppState {
 final class MenuBarViewModel: ObservableObject {
     // State
     @Published var appState: AppState = .loading
-    @Published var isOllamaAvailable = false
+    @Published var isLLMReady = false
+    @Published var llmSetupManager = LLMSetupManager.shared
 
     // Services
     let configService: ConfigService
     private var cancellables = Set<AnyCancellable>()
     private let transcriber: Transcriber
-    private let llmService: LLMService
+    private let llmService: LocalLLMService
     private let audioRecorder: AudioRecorder
     private let audioFeedback: AudioFeedback
     private let clipboardManager: ClipboardManager
@@ -55,13 +36,14 @@ final class MenuBarViewModel: ObservableObject {
     @Published var isRecordingHotkey = false
     @Published var recordingHotkeyFor: HotkeyMode?
 
-    // Hotkey recording window
+    // Window controllers
     let hotkeyWindowController = HotkeyRecordingWindowController()
+    let customPromptWindowController = CustomPromptWindowController()
 
     init() {
         self.configService = ConfigService.shared
         self.transcriber = Transcriber(modelName: configService.whisperModel)
-        self.llmService = LLMService(model: configService.llmModel)
+        self.llmService = LocalLLMService()
         self.audioRecorder = AudioRecorder()
         self.audioFeedback = AudioFeedback()
         self.clipboardManager = ClipboardManager()
@@ -83,6 +65,25 @@ final class MenuBarViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // Update isLLMReady and send download notifications
+        llmSetupManager.$status
+            .receive(on: RunLoop.main)
+            .sink { [weak self] (status: LLMSetupStatus) in
+                guard let self = self else { return }
+                switch status {
+                case .downloading(let progress) where progress == 0:
+                    self.sendNotification(title: "Downloading", body: "Enhanced Dictation model download started...")
+                case .downloaded:
+                    self.isLLMReady = true
+                    self.sendNotification(title: "Download Complete", body: "Enhanced Dictation model is ready to use.")
+                case .failed(let msg):
+                    self.sendNotification(title: "Download Failed", body: msg)
+                default:
+                    break
+                }
+            }
+            .store(in: &cancellables)
+
         // Start initialization automatically
         Task { @MainActor in
             await self.requestNotificationPermissions()
@@ -100,11 +101,11 @@ final class MenuBarViewModel: ObservableObject {
             sendNotification(title: "Permission Required", body: "Please grant Microphone access in System Preferences")
         }
 
-        // Check Ollama availability
-        isOllamaAvailable = await llmService.checkAvailable()
+        // Check if LLM model is downloaded
+        isLLMReady = llmService.isModelDownloaded
 
-        // If output mode requires Ollama but it's not available, fall back to raw
-        if configService.outputMode.requiresOllama && !isOllamaAvailable {
+        // If output mode requires LLM but model not downloaded, fall back to raw
+        if configService.outputMode.requiresLLM && !isLLMReady {
             configService.outputMode = .raw
         }
 
@@ -121,6 +122,12 @@ final class MenuBarViewModel: ObservableObject {
             sendNotification(title: "Ready", body: "Whisper model loaded. Use \(hotkey) to record.")
         } else {
             sendNotification(title: "Error", body: transcriber.errorMessage ?? "Failed to load model")
+        }
+
+        // Show onboarding if essential permissions are missing
+        let hasAccessibility = AXIsProcessTrusted()
+        if !hasMicPermission || !hasAccessibility {
+            OnboardingWindowController.shared.show()
         }
     }
 
@@ -178,11 +185,14 @@ final class MenuBarViewModel: ObservableObject {
             let outputMode = configService.outputMode
             var finalText = rawText
 
-            if outputMode.requiresOllama {
-                if isOllamaAvailable {
-                    finalText = try await llmService.format(text: rawText, mode: outputMode, language: language)
+            if outputMode.requiresLLM && isLLMReady {
+                do {
+                    let custom = outputMode == .custom ? configService.customPrompt : nil
+                    finalText = try await llmService.format(text: rawText, mode: outputMode, language: language, customPrompt: custom)
+                } catch {
+                    AppLogger.llm.error("LLM formatting failed, using raw text: \(error.localizedDescription)")
+                    // Fall through to raw text
                 }
-                // If Ollama not available, use raw text
             }
 
             // Skip if LLM returned empty (silence detected)
@@ -223,22 +233,38 @@ final class MenuBarViewModel: ObservableObject {
 
     // MARK: - Output Mode
 
-    func setOutputMode(_ mode: OutputMode) async {
-        if mode.requiresOllama && !isOllamaAvailable {
-            // Re-check Ollama
-            isOllamaAvailable = await llmService.checkAvailable()
-
-            if !isOllamaAvailable {
-                sendNotification(
-                    title: "Ollama Required",
-                    body: "Enhanced modes require Ollama. Install from ollama.com and run: ollama pull gemma3"
-                )
-                return
-            }
+    func setOutputMode(_ mode: OutputMode) {
+        if mode.requiresLLM && !isLLMReady {
+            sendNotification(
+                title: "Model Required",
+                body: "Download the Enhanced Dictation model first (Settings → Advanced or reopen onboarding)"
+            )
+            return
         }
 
         configService.outputMode = mode
         sendNotification(title: "Mode Changed", body: "Now using \(mode.displayName) mode")
+    }
+
+    /// Open onboarding to download LLM model (has download progress UI)
+    func downloadLLMModel() {
+        OnboardingWindowController.shared.show()
+    }
+
+    /// Delete the downloaded LLM model
+    func deleteLLMModel() {
+        llmSetupManager.deleteModel()
+        isLLMReady = false
+        // Fall back to raw mode if current mode requires LLM
+        if configService.outputMode.requiresLLM {
+            configService.outputMode = .raw
+        }
+        sendNotification(title: "Model Deleted", body: "Enhanced Dictation model removed.")
+    }
+
+    /// Open the custom prompt editor window
+    func editCustomPrompt() {
+        customPromptWindowController.show(configService: configService)
     }
 
     // MARK: - Hotkey Mode
@@ -252,20 +278,6 @@ final class MenuBarViewModel: ObservableObject {
     // MARK: - Language
 
     func setLanguage(_ language: Language) {
-        // Check if current model supports the language
-        let currentModel = configService.whisperModel
-        let isEnglishOnlyModel = currentModel.hasSuffix(".en")
-
-        if language != .english && isEnglishOnlyModel {
-            // Need to switch to multilingual model
-            let multilingualModel = currentModel.replacingOccurrences(of: ".en", with: "")
-            sendNotification(
-                title: "Model Change Required",
-                body: "Switching from \(currentModel) to \(multilingualModel) for \(language.displayName). Restart app to apply."
-            )
-            configService.whisperModel = multilingualModel
-        }
-
         configService.language = language
         sendNotification(title: "Language Changed", body: "Now using \(language.displayName)")
     }
@@ -342,7 +354,7 @@ final class MenuBarViewModel: ObservableObject {
         guard await ttsService.checkAvailable() else {
             sendNotification(
                 title: "TTS Not Available",
-                body: "TTS server not running. Run: cd DuaTalk && ./setup.sh"
+                body: "TTS server not running. Reopen Dua Talk to set up Text-to-Speech."
             )
             return
         }

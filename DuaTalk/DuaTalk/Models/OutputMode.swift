@@ -4,85 +4,70 @@ import Foundation
 enum OutputMode: String, Codable, CaseIterable {
     case raw = "raw"
     case general = "general"
-    case codePrompt = "code_prompt"
+    case custom = "custom"
 
     /// Display name for the mode
     var displayName: String {
         switch self {
         case .raw: return "Raw"
         case .general: return "General"
-        case .codePrompt: return "Code Prompt"
+        case .custom: return "Custom"
         }
     }
 
-    /// Whether this mode requires Ollama
-    var requiresOllama: Bool {
+    /// Whether this mode requires the local LLM model
+    var requiresLLM: Bool {
         self != .raw
     }
 
-    /// The LLM prompt for this mode (nil for raw)
+    /// The LLM prompt for this mode (nil for raw and custom — custom prompt comes from config)
     func prompt(for language: Language) -> String? {
         switch self {
-        case .raw:
+        case .raw, .custom:
             return nil
 
         case .general:
             switch language {
             case .english:
                 return """
-                Clean up this dictation. You are transcribing speech from a software developer.
-                - If the input is empty, silence, or contains no actual speech content, return NOTHING (empty response)
-                - Remove filler words (um, uh, like, you know, so, basically)
-                - Fix punctuation and capitalization
-                - PRESERVE all technical terms exactly: API, CI/CD, DevOps, Git, tests, deployment, frontend, backend, refactor, debug, etc.
-                - PRESERVE programming terms, library names, and tech jargon - do NOT rephrase them
-                - Keep acronyms as spoken (e.g., "API" not "application programming interface")
-                - Keep the natural flow, just clean up speech artifacts
-                - Do NOT make up or invent any content - only clean up what was actually said
-                - Output ONLY the cleaned text, nothing else.
-                """
-            case .swedish:
-                return """
-                Städa upp denna diktering. Du transkriberar tal från en mjukvaruutvecklare.
-                - Om inmatningen är tom, tystnad, eller saknar faktiskt talinnehåll, returnera INGENTING (tomt svar)
-                - Ta bort utfyllnadsord (öh, eh, liksom, typ, asså, ba)
-                - Fixa interpunktion och versaler
-                - BEVARA alla tekniska termer exakt: API, CI/CD, DevOps, Git, tester, deployment, frontend, backend, refactor, debug, etc.
-                - BEVARA programmeringstermer, biblioteksnamn och tech-jargong - skriv INTE om dem
-                - Behåll akronymer som de sägs
-                - Behåll det naturliga flödet, städa bara upp talfel
-                - Hitta INTE PÅ eller uppfinn något innehåll - städa bara upp det som faktiskt sades
-                - Skriv ENDAST den städade texten, inget annat.
-                """
-            }
+                You are a dictation formatter. Clean up the spoken text below into well-structured written text.
 
-        case .codePrompt:
-            switch language {
-            case .english:
-                return """
-                Format this as a clear prompt for an AI coding assistant.
-                - If the input is empty, silence, or contains no actual speech content, return NOTHING (empty response)
-                - Use imperative language ("Implement...", "Create...", "Fix...", "Add...")
-                - Structure with numbered steps if multiple tasks mentioned
-                - Wrap code references, file names, and technical terms in backticks
-                - Be specific and unambiguous
-                - Remove verbal fillers and hesitations
-                - Do NOT make up or invent any content - only format what was actually said
-                - Output ONLY the formatted prompt, nothing else.
+                Rules:
+                - Remove filler words and hesitations that add no meaning
+                - Remove stuttering and repeated words
+                - Fix punctuation, grammar, and sentence structure
+                - Keep technical terms and meaningful content exactly as spoken
+                - Break into paragraphs when the topic shifts or the speaker says "new paragraph" or "new line"
+                - Output only the cleaned text, nothing else
                 """
             case .swedish:
                 return """
-                Formatera detta som en tydlig prompt för en AI-kodassistent.
-                - Om inmatningen är tom, tystnad, eller saknar faktiskt talinnehåll, returnera INGENTING (tomt svar)
-                - Använd imperativ form ("Implementera...", "Skapa...", "Fixa...", "Lägg till...")
-                - Strukturera med numrerade steg om flera uppgifter nämns
-                - Använd backticks runt kodreferenser, filnamn och tekniska termer
-                - Var specifik och tydlig
-                - Ta bort utfyllnadsord och tveksamheter
-                - Hitta INTE PÅ eller uppfinn något innehåll - formatera bara det som faktiskt sades
-                - Skriv ENDAST den formaterade prompten, inget annat.
+                Du är en dikteringsformaterare. Städa upp den talade texten nedan till välstrukturerad skriven text.
+
+                Regler:
+                - Ta bort utfyllnadsord och tvekanden som inte tillför mening
+                - Ta bort stamning och upprepade ord
+                - Fixa interpunktion, grammatik och meningsuppbyggnad
+                - Bevara tekniska termer och meningsfullt innehåll exakt som det sägs
+                - Dela upp i stycken när ämnet skiftar eller talaren säger "nytt stycke" eller "ny rad"
+                - Skriv bara den städade texten, inget annat
                 """
             }
+        }
+    }
+
+    /// Backward-compatible decoding: maps "code_prompt" → .custom
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        switch rawValue {
+        case "code_prompt":
+            self = .custom
+        default:
+            guard let mode = OutputMode(rawValue: rawValue) else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unknown output mode: \(rawValue)")
+            }
+            self = mode
         }
     }
 }

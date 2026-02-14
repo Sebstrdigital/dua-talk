@@ -10,6 +10,7 @@ struct AppConfig: Codable {
     var whisperModel: String
     var llmModel: String
     var language: Language
+    var customPrompt: String
 
     struct HotkeyConfigs: Codable {
         var toggle: HotkeyConfig
@@ -45,7 +46,10 @@ struct AppConfig: Codable {
         case whisperModel = "whisper_model"
         case llmModel = "llm_model"
         case language
+        case customPrompt = "custom_prompt"
     }
+
+    static let defaultCustomPrompt = "Clean up this dictation. Fix grammar, punctuation, and remove filler words. Output only the cleaned text."
 
     /// Default configuration
     static let `default` = AppConfig(
@@ -58,16 +62,17 @@ struct AppConfig: Codable {
         activeMode: .toggle,
         outputMode: .general,
         history: [],
-        whisperModel: "base",  // Use multilingual model for language support
+        whisperModel: "small",
         llmModel: "gemma3",
-        language: .english
+        language: .english,
+        customPrompt: defaultCustomPrompt
     )
 
     /// Maximum history items to keep
     static let historyLimit = 5
 
     /// Memberwise initializer
-    init(version: Int, hotkeys: HotkeyConfigs, activeMode: HotkeyMode, outputMode: OutputMode, history: [HistoryItem], whisperModel: String, llmModel: String, language: Language) {
+    init(version: Int, hotkeys: HotkeyConfigs, activeMode: HotkeyMode, outputMode: OutputMode, history: [HistoryItem], whisperModel: String, llmModel: String, language: Language, customPrompt: String = defaultCustomPrompt) {
         self.version = version
         self.hotkeys = hotkeys
         self.activeMode = activeMode
@@ -76,9 +81,10 @@ struct AppConfig: Codable {
         self.whisperModel = whisperModel
         self.llmModel = llmModel
         self.language = language
+        self.customPrompt = customPrompt
     }
 
-    /// Handle missing language field from old configs
+    /// Handle missing fields from old configs
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         version = try container.decode(Int.self, forKey: .version)
@@ -86,8 +92,15 @@ struct AppConfig: Codable {
         activeMode = try container.decode(HotkeyMode.self, forKey: .activeMode)
         outputMode = try container.decode(OutputMode.self, forKey: .outputMode)
         history = try container.decode([HistoryItem].self, forKey: .history)
-        whisperModel = try container.decode(String.self, forKey: .whisperModel)
+        let rawWhisperModel = try container.decode(String.self, forKey: .whisperModel)
+        // Migrate removed base model to small
+        if rawWhisperModel == "base" || rawWhisperModel == "base.en" {
+            whisperModel = "small"
+        } else {
+            whisperModel = rawWhisperModel
+        }
         llmModel = try container.decode(String.self, forKey: .llmModel)
         language = try container.decodeIfPresent(Language.self, forKey: .language) ?? .english
+        customPrompt = try container.decodeIfPresent(String.self, forKey: .customPrompt) ?? Self.defaultCustomPrompt
     }
 }

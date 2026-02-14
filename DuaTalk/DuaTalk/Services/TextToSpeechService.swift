@@ -59,7 +59,7 @@ final class TextToSpeechService: NSObject {
         var errorDescription: String? {
             switch self {
             case .serverNotRunning:
-                return "TTS not set up. Run: cd DuaTalk && ./setup.sh"
+                return "TTS not set up. Open Dua Talk to set up Text-to-Speech."
             case .synthesizeFailed(let msg):
                 return "TTS failed: \(msg)"
             case .playbackFailed:
@@ -163,13 +163,12 @@ final class TextToSpeechService: NSObject {
         // Kill any stale server from a previous crash
         killStaleServer()
 
-        let duatalkDir = NSHomeDirectory() + "/.duatalk"
-        let serverScript = duatalkDir + "/kokoro_server.py"
-        let pythonPath = duatalkDir + "/venv/bin/python"
+        let serverScript = AppPaths.kokoroServerScript
+        let pythonPath = AppPaths.venvPython
 
         guard FileManager.default.fileExists(atPath: serverScript),
               FileManager.default.fileExists(atPath: pythonPath) else {
-            AppLogger.tts.warning("Kokoro not set up. Run: cd DuaTalk && ./setup.sh")
+            AppLogger.tts.warning("Kokoro not set up — use onboarding to install")
             return
         }
 
@@ -193,7 +192,7 @@ final class TextToSpeechService: NSObject {
         isSpeaking || (audioPlayer?.isPlaying ?? false)
     }
 
-    /// Speak text using XTTS v2 server
+    /// Speak text using Kokoro TTS server
     func speak(_ text: String) async throws {
         guard !speaking else {
             throw TTSError.alreadySpeaking

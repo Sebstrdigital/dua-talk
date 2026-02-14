@@ -14,13 +14,15 @@
 		100000000000000000000004 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000004 /* AppConfig.swift */; };
 		100000000000000000000005 /* Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000005 /* Language.swift */; };
 		100000000000000000000006 /* WhisperModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000006 /* WhisperModel.swift */; };
+		100000000000000000000007 /* AppPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000007 /* AppPaths.swift */; };
 
 		/* Services */
 		100000000000000000000011 /* ConfigService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000011 /* ConfigService.swift */; };
 		100000000000000000000012 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000012 /* AudioRecorder.swift */; };
 		100000000000000000000013 /* AudioFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000013 /* AudioFeedback.swift */; };
 		100000000000000000000014 /* Transcriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000014 /* Transcriber.swift */; };
-		100000000000000000000015 /* LLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000015 /* LLMService.swift */; };
+		100000000000000000000025 /* LocalLLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000025 /* LocalLLMService.swift */; };
+		100000000000000000000026 /* LLMSetupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000026 /* LLMSetupManager.swift */; };
 		100000000000000000000016 /* ClipboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000016 /* ClipboardManager.swift */; };
 		100000000000000000000017 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000017 /* HotkeyManager.swift */; };
 		100000000000000000000018 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000018 /* Logger.swift */; };
@@ -34,6 +36,7 @@
 		100000000000000000000031 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000031 /* MenuBarView.swift */; };
 		100000000000000000000032 /* HotkeyRecordingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000032 /* HotkeyRecordingWindow.swift */; };
 		100000000000000000000033 /* OnboardingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000033 /* OnboardingWindow.swift */; };
+		100000000000000000000034 /* CustomPromptWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000034 /* CustomPromptWindow.swift */; };
 
 		/* App */
 		100000000000000000000041 /* DuaTalkApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000041 /* DuaTalkApp.swift */; };
@@ -45,6 +48,7 @@
 
 		/* WhisperKit */
 		100000000000000000000061 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 300000000000000000000001 /* WhisperKit */; };
+		100000000000000000000062 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 300000000000000000000002 /* LlamaSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -55,13 +59,15 @@
 		200000000000000000000004 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		200000000000000000000005 /* Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Language.swift; sourceTree = "<group>"; };
 		200000000000000000000006 /* WhisperModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperModel.swift; sourceTree = "<group>"; };
+		200000000000000000000007 /* AppPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPaths.swift; sourceTree = "<group>"; };
 
 		/* Services */
 		200000000000000000000011 /* ConfigService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigService.swift; sourceTree = "<group>"; };
 		200000000000000000000012 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
 		200000000000000000000013 /* AudioFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFeedback.swift; sourceTree = "<group>"; };
 		200000000000000000000014 /* Transcriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transcriber.swift; sourceTree = "<group>"; };
-		200000000000000000000015 /* LLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMService.swift; sourceTree = "<group>"; };
+		200000000000000000000025 /* LocalLLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLLMService.swift; sourceTree = "<group>"; };
+		200000000000000000000026 /* LLMSetupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMSetupManager.swift; sourceTree = "<group>"; };
 		200000000000000000000016 /* ClipboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardManager.swift; sourceTree = "<group>"; };
 		200000000000000000000017 /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
 		200000000000000000000018 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
@@ -75,6 +81,7 @@
 		200000000000000000000031 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		200000000000000000000032 /* HotkeyRecordingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyRecordingWindow.swift; sourceTree = "<group>"; };
 		200000000000000000000033 /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
+		200000000000000000000034 /* CustomPromptWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPromptWindow.swift; sourceTree = "<group>"; };
 
 		/* App */
 		200000000000000000000041 /* DuaTalkApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuaTalkApp.swift; sourceTree = "<group>"; };
@@ -96,6 +103,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				100000000000000000000061 /* WhisperKit in Frameworks */,
+				100000000000000000000062 /* LlamaSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,6 +140,7 @@
 				200000000000000000000004 /* AppConfig.swift */,
 				200000000000000000000005 /* Language.swift */,
 				200000000000000000000006 /* WhisperModel.swift */,
+				200000000000000000000007 /* AppPaths.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -143,7 +152,8 @@
 				200000000000000000000012 /* AudioRecorder.swift */,
 				200000000000000000000013 /* AudioFeedback.swift */,
 				200000000000000000000014 /* Transcriber.swift */,
-				200000000000000000000015 /* LLMService.swift */,
+				200000000000000000000025 /* LocalLLMService.swift */,
+				200000000000000000000026 /* LLMSetupManager.swift */,
 				200000000000000000000016 /* ClipboardManager.swift */,
 				200000000000000000000017 /* HotkeyManager.swift */,
 				200000000000000000000018 /* Logger.swift */,
@@ -167,6 +177,7 @@
 				200000000000000000000031 /* MenuBarView.swift */,
 				200000000000000000000032 /* HotkeyRecordingWindow.swift */,
 				200000000000000000000033 /* OnboardingWindow.swift */,
+				200000000000000000000034 /* CustomPromptWindow.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -209,6 +220,7 @@
 			name = DuaTalk;
 			packageProductDependencies = (
 				300000000000000000000001 /* WhisperKit */,
+				300000000000000000000002 /* LlamaSwift */,
 			);
 			productName = DuaTalk;
 			productReference = 400000000000000000000001 /* Dua Talk.app */;
@@ -240,6 +252,7 @@
 			mainGroup = 600000000000000000000000;
 			packageReferences = (
 				A00000000000000000000001 /* XCRemoteSwiftPackageReference "WhisperKit" */,
+				A00000000000000000000002 /* XCRemoteSwiftPackageReference "llama.swift" */,
 			);
 			productRefGroup = 600000000000000000000099 /* Products */;
 			projectDirPath = "";
@@ -276,7 +289,9 @@
 				100000000000000000000012 /* AudioRecorder.swift in Sources */,
 				100000000000000000000013 /* AudioFeedback.swift in Sources */,
 				100000000000000000000014 /* Transcriber.swift in Sources */,
-				100000000000000000000015 /* LLMService.swift in Sources */,
+				100000000000000000000025 /* LocalLLMService.swift in Sources */,
+				100000000000000000000026 /* LLMSetupManager.swift in Sources */,
+				100000000000000000000007 /* AppPaths.swift in Sources */,
 				100000000000000000000016 /* ClipboardManager.swift in Sources */,
 				100000000000000000000017 /* HotkeyManager.swift in Sources */,
 				100000000000000000000021 /* MenuBarViewModel.swift in Sources */,
@@ -289,6 +304,7 @@
 				100000000000000000000020 /* TextSelectionService.swift in Sources */,
 				100000000000000000000032 /* HotkeyRecordingWindow.swift in Sources */,
 				100000000000000000000033 /* OnboardingWindow.swift in Sources */,
+				100000000000000000000034 /* CustomPromptWindow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -503,6 +519,14 @@
 				minimumVersion = 0.9.0;
 			};
 		};
+		A00000000000000000000002 /* XCRemoteSwiftPackageReference "llama.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mattt/llama.swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8028.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -510,6 +534,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A00000000000000000000001 /* XCRemoteSwiftPackageReference "WhisperKit" */;
 			productName = WhisperKit;
+		};
+		300000000000000000000002 /* LlamaSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A00000000000000000000002 /* XCRemoteSwiftPackageReference "llama.swift" */;
+			productName = LlamaSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
