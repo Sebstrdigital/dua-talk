@@ -125,41 +125,6 @@ struct AdvancedMenu: View {
 
     var body: some View {
         Menu("Advanced") {
-            // Output mode
-            Menu("Mode: \(viewModel.configService.outputMode.displayName)") {
-                ForEach(OutputMode.allCases, id: \.self) { mode in
-                    Button(action: {
-                        viewModel.setOutputMode(mode)
-                    }) {
-                        HStack {
-                            Text(mode.displayName)
-                            if viewModel.configService.outputMode == mode {
-                                Spacer()
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Edit Custom Prompt
-            Button("Edit Custom Prompt...") {
-                viewModel.editCustomPrompt()
-            }
-
-            // LLM status
-            if viewModel.isLLMReady {
-                Text("LLM: Ready")
-                    .foregroundColor(.secondary)
-                Button("Delete Model...") {
-                    viewModel.deleteLLMModel()
-                }
-            } else {
-                Button("Download Enhanced Dictation Model...") {
-                    viewModel.downloadLLMModel()
-                }
-            }
-
             // Language
             Menu("Language: \(viewModel.configService.language.displayName)") {
                 ForEach(Language.allCases, id: \.self) { language in
