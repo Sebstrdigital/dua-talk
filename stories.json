@@ -75,10 +75,10 @@
       ],
       "priority": 4,
       "size": "medium",
-      "passes": false,
+      "passes": true,
       "verify": "deep",
       "startTime": "2026-02-20 09:31",
-      "endTime": "",
+      "endTime": "2026-02-20 09:40",
       "dependsOn": [
         "US-001"
       ]
