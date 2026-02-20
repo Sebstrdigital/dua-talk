@@ -11,6 +11,7 @@ struct AppConfig: Codable {
     var llmModel: String
     var language: Language
     var customPrompt: String
+    var muteSounds: Bool
 
     struct HotkeyConfigs: Codable {
         var toggle: HotkeyConfig
@@ -47,6 +48,7 @@ struct AppConfig: Codable {
         case llmModel = "llm_model"
         case language
         case customPrompt = "custom_prompt"
+        case muteSounds = "mute_sounds"
     }
 
     static let defaultCustomPrompt = "Clean up this dictation. Fix grammar, punctuation, and remove filler words. Output only the cleaned text."
@@ -65,14 +67,15 @@ struct AppConfig: Codable {
         whisperModel: "small",
         llmModel: "gemma3",
         language: .english,
-        customPrompt: defaultCustomPrompt
+        customPrompt: defaultCustomPrompt,
+        muteSounds: false
     )
 
     /// Maximum history items to keep
     static let historyLimit = 5
 
     /// Memberwise initializer
-    init(version: Int, hotkeys: HotkeyConfigs, activeMode: HotkeyMode, outputMode: OutputMode, history: [HistoryItem], whisperModel: String, llmModel: String, language: Language, customPrompt: String = defaultCustomPrompt) {
+    init(version: Int, hotkeys: HotkeyConfigs, activeMode: HotkeyMode, outputMode: OutputMode, history: [HistoryItem], whisperModel: String, llmModel: String, language: Language, customPrompt: String = defaultCustomPrompt, muteSounds: Bool = false) {
         self.version = version
         self.hotkeys = hotkeys
         self.activeMode = activeMode
@@ -82,6 +85,7 @@ struct AppConfig: Codable {
         self.llmModel = llmModel
         self.language = language
         self.customPrompt = customPrompt
+        self.muteSounds = muteSounds
     }
 
     /// Handle missing fields from old configs
@@ -102,5 +106,6 @@ struct AppConfig: Codable {
         llmModel = try container.decode(String.self, forKey: .llmModel)
         language = try container.decodeIfPresent(Language.self, forKey: .language) ?? .english
         customPrompt = try container.decodeIfPresent(String.self, forKey: .customPrompt) ?? Self.defaultCustomPrompt
+        muteSounds = try container.decodeIfPresent(Bool.self, forKey: .muteSounds) ?? false
     }
 }

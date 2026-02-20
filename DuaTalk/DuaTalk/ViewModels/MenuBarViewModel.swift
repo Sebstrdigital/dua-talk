@@ -49,6 +49,9 @@ final class MenuBarViewModel: ObservableObject {
         self.ttsService = TextToSpeechService()
         self.textSelectionService = TextSelectionService(clipboardManager: clipboardManager)
 
+        // Sync mute state from config
+        audioFeedback.isMuted = configService.muteSounds
+
         // Set up hotkey delegate
         hotkeyManager.delegate = self
 
@@ -176,6 +179,13 @@ final class MenuBarViewModel: ObservableObject {
     /// Paste a history item
     func pasteHistoryItem(_ item: HistoryItem) {
         clipboardManager.pasteText(item.text)
+    }
+
+    // MARK: - Mute Sounds
+
+    func toggleMuteSounds() {
+        configService.muteSounds.toggle()
+        audioFeedback.isMuted = configService.muteSounds
     }
 
     // MARK: - Language

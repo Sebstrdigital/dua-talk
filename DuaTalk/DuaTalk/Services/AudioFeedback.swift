@@ -7,6 +7,8 @@ final class AudioFeedback {
     private var audioEngine: AVAudioEngine?
     private var sourceNode: AVAudioSourceNode?
 
+    var isMuted: Bool = false
+
     private let sampleRate: Double = 44100
     private var isReady = false
 
@@ -176,12 +178,14 @@ final class AudioFeedback {
 
     /// Rising "bloop" when recording starts
     func beepOn() {
+        guard !isMuted else { return }
         // Rising bubble: low to high frequency, quick attack
         playBubble(startFreq: 280, endFreq: 580, duration: 0.15, attackTime: 0.02)
     }
 
     /// Descending "pop" when recording stops / transcription done
     func beepOff() {
+        guard !isMuted else { return }
         // Falling pop: high to low frequency, quick attack
         playBubble(startFreq: 520, endFreq: 320, duration: 0.12, attackTime: 0.015)
     }

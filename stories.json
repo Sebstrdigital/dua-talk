@@ -35,10 +35,10 @@
       ],
       "priority": 2,
       "size": "medium",
-      "passes": false,
+      "passes": true,
       "verify": "inline",
       "startTime": "2026-02-20 09:14",
-      "endTime": "",
+      "endTime": "2026-02-20 09:17",
       "dependsOn": []
     },
     {
@@ -56,7 +56,7 @@
       "size": "small",
       "passes": false,
       "verify": "inline",
-      "startTime": "",
+      "startTime": "2026-02-20 09:17",
       "endTime": "",
       "dependsOn": [
         "US-002"

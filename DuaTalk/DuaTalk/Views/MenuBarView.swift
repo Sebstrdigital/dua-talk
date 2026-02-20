@@ -102,6 +102,19 @@ struct AdvancedMenu: View {
 
     var body: some View {
         Menu("Advanced") {
+            // Mute Sounds
+            Button(action: { viewModel.toggleMuteSounds() }) {
+                HStack {
+                    Text("Mute Sounds")
+                    if viewModel.configService.muteSounds {
+                        Spacer()
+                        Image(systemName: "checkmark")
+                    }
+                }
+            }
+
+            Divider()
+
             // Language
             Menu("Language: \(viewModel.configService.language.displayName)") {
                 ForEach(Language.allCases, id: \.self) { language in

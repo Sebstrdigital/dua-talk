@@ -133,6 +133,17 @@ final class ConfigService: ObservableObject {
         }
     }
 
+    // MARK: - Mute Sounds
+
+    var muteSounds: Bool {
+        get { config.muteSounds }
+        set {
+            config.muteSounds = newValue
+            objectWillChange.send()
+            save()
+        }
+    }
+
     // MARK: - Language
 
     var language: Language {
