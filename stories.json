@@ -1,87 +1,83 @@
 {
-  "project": "Dikta",
-  "branchName": "takt/v02-dual-hotkeys-and-audio-reliability",
-  "description": "Dikta v0.2 — Make both Toggle and Push-to-Talk hotkeys active simultaneously, fix audio feedback dying after extended runtime, add mute option",
+  "project": "Dikta Windows",
+  "branchName": "takt/windows-dikta",
+  "description": "Minimal offline dictation app for Windows 11 — .NET 8/C#/WPF system tray app with Whisper.net STT",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Always-on dual dictation hotkeys",
-      "description": "As a user, I want both my Toggle hotkey and Push-to-Talk hotkey to work at the same time so that I don't have to switch modes before dictating.",
+      "title": "Project scaffold and system tray shell",
+      "description": "As a developer, I want a .NET 8 WPF project with a system tray icon and context menu so that we have the foundation for all other features.",
       "type": "logic",
       "acceptanceCriteria": [
-        "HotkeyManager tracks two independent dictation hotkey configs (toggleConfig + pttConfig) with separate isActive state, checked independently in handleModifierEvent() and handleKeyEvent() — same pattern as existing TTS hotkey",
-        "HotkeyManagerDelegate conveys which mode triggered via hotkeyPressed(mode:) parameter; MenuBarViewModel tracks activeRecordingMode and only allows the initiating mode to stop recording",
-        "Settings menu no longer shows Toggle Mode / Push-to-Talk Mode radio buttons; the three hotkey configuration buttons remain",
-        "swift build succeeds"
+        "dotnet new wpf project targets net8.0-windows and x64; dotnet build succeeds",
+        "App launches with no main window, only a system tray icon with context menu items: Settings, History, Quit",
+        "Clicking Quit exits the app cleanly",
+        "Typecheck passes"
       ],
       "priority": 1,
       "size": "medium",
-      "passes": true,
+      "passes": false,
       "verify": "inline",
-      "startTime": "2026-02-20 09:08",
-      "endTime": "2026-02-20 09:14",
+      "startTime": "",
+      "endTime": "",
       "dependsOn": []
     },
     {
       "id": "US-002",
-      "title": "Resilient audio feedback engine",
-      "description": "As a user, I want recording start/stop sounds to keep working no matter how long the app has been running, so that I always get audible confirmation of my actions.",
+      "title": "Global hotkey and microphone recording",
+      "description": "As a user, I want to press a global hotkey to start/stop recording my voice so that I can dictate from any application.",
       "type": "logic",
       "acceptanceCriteria": [
-        "AudioFeedback observes AVAudioEngineConfigurationChange notification and automatically rebuilds and restarts the engine when fired",
-        "playBubble() checks audioEngine.isRunning before each play and restarts transparently if stopped; engine restarts are logged via AppLogger.audio",
-        "Shared mutable state between the audio render thread and main thread is synchronized using os_unfair_lock — no data races on isPlaying, samplesPlayed, phase, frequencies, or envelope parameters",
-        "swift build succeeds"
+        "Global hotkey (default Ctrl+Shift+D) registered via RegisterHotKey works regardless of focused window; pressing toggles between idle and recording states",
+        "NAudio captures microphone audio as 16kHz mono PCM WAV suitable for Whisper; recording saves to a temp file",
+        "Tray icon changes appearance (e.g., red overlay) while recording; sound effects play on start and stop",
+        "Typecheck passes"
       ],
       "priority": 2,
-      "size": "medium",
-      "passes": true,
+      "size": "large",
+      "passes": false,
       "verify": "inline",
-      "startTime": "2026-02-20 09:14",
-      "endTime": "2026-02-20 09:17",
-      "dependsOn": []
+      "startTime": "",
+      "endTime": "",
+      "dependsOn": ["US-001"]
     },
     {
       "id": "US-003",
-      "title": "Mute feedback sounds",
-      "description": "As a user, I want to be able to mute the dictation feedback sounds from the menu, so I can use the app silently when I prefer.",
+      "title": "Offline Whisper transcription and auto-paste",
+      "description": "As a user, I want my recorded audio transcribed locally and the result pasted into the active window so that dictation is seamless and fully offline.",
       "type": "logic",
       "acceptanceCriteria": [
-        "AppConfig has muteSounds Bool field (default false), persisted as mute_sounds in JSON; old configs without the field decode gracefully to false",
-        "A Mute Sounds toggle in the Advanced menu shows checkmark state and persists the setting via ConfigService",
-        "beepOn() and beepOff() early-return without playing when muteSounds is true",
-        "swift build succeeds"
+        "Whisper.net processes the recorded WAV using the small model from %APPDATA%\\Dikta\\models\\ and returns transcribed text",
+        "After transcription, text is placed on clipboard and Ctrl+V is simulated via SendInput to paste into the previously active window",
+        "If the Whisper model is not found on disk, a dialog prompts the user to download/extract it before first use",
+        "Typecheck passes"
       ],
       "priority": 3,
-      "size": "small",
-      "passes": true,
+      "size": "large",
+      "passes": false,
       "verify": "inline",
-      "startTime": "2026-02-20 09:17",
-      "endTime": "2026-02-20 09:30",
-      "dependsOn": [
-        "US-002"
-      ]
+      "startTime": "",
+      "endTime": "",
+      "dependsOn": ["US-002"]
     },
     {
       "id": "US-004",
-      "title": "Remove activeMode from config and clean up references",
-      "description": "As a developer, I want the activeMode field removed from the config model and all code paths that reference it, so there is no dead code around mode switching.",
+      "title": "Settings, history, and config persistence",
+      "description": "As a user, I want to customize my hotkey and language, and see my recent transcriptions, so that Dikta fits my workflow.",
       "type": "logic",
       "acceptanceCriteria": [
-        "activeMode removed from AppConfig; activeHotkeyMode and activeHotkey removed from ConfigService; HotkeyManager.updateConfig() accepts both toggle and PTT configs instead of single config + mode",
-        "AppConfig version bumped to 3; JSON decoding handles version 2 configs (with activeMode field) without error",
-        "No references to activeMode, activeHotkeyMode, activeHotkey, or setHotkeyMode remain in the codebase",
-        "swift build succeeds"
+        "Settings window allows changing: hotkey (via capture dialog), language (English/Swedish), Whisper model (small/medium); changes persist to %APPDATA%\\Dikta\\config.json",
+        "History submenu in tray context menu shows last 10 transcriptions (truncated preview); clicking copies full text to clipboard; history persists to %APPDATA%\\Dikta\\history.json",
+        "On first launch, if microphone access is denied, a dialog explains how to enable it in Windows Privacy Settings",
+        "Typecheck passes"
       ],
       "priority": 4,
-      "size": "medium",
-      "passes": true,
+      "size": "large",
+      "passes": false,
       "verify": "deep",
-      "startTime": "2026-02-20 09:31",
-      "endTime": "2026-02-20 09:40",
-      "dependsOn": [
-        "US-001"
-      ]
+      "startTime": "",
+      "endTime": "",
+      "dependsOn": ["US-003"]
     }
   ],
   "waves": []

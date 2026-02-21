@@ -3,121 +3,114 @@
     "US-001": [
       {
         "id": "SC-001",
-        "given": "the app is running and idle with both Toggle (Shift+Ctrl) and Push-to-Talk (Cmd+Shift) hotkeys configured",
-        "when": "the user presses Shift+Ctrl (toggle hotkey)",
-        "then": "recording starts and the menu shows Stop Recording",
-        "type": "behavioral"
+        "given": "the Dikta Windows project is cloned and .NET 8 SDK is installed",
+        "when": "dotnet build is run from the project root",
+        "then": "the build succeeds with no errors and produces a DiktaWindows.exe",
+        "type": "contract"
       },
       {
         "id": "SC-002",
-        "given": "the app is running and idle",
-        "when": "the user holds Cmd+Shift (PTT hotkey) and then releases it",
-        "then": "recording starts on press and stops on release, producing a transcription",
+        "given": "the built app is launched on Windows 11",
+        "when": "the user looks at the taskbar notification area",
+        "then": "a Dikta tray icon is visible, no main window appears, and right-clicking shows a menu with Settings, History, and Quit",
         "type": "behavioral"
       },
       {
         "id": "SC-003",
-        "given": "recording is in progress via the toggle hotkey",
-        "when": "the user presses and releases the PTT hotkey",
-        "then": "the PTT hotkey is ignored and recording continues until the toggle hotkey is pressed again",
-        "type": "edge"
-      },
-      {
-        "id": "SC-004",
-        "given": "recording is in progress via the PTT hotkey (held down)",
-        "when": "the user presses the toggle hotkey",
-        "then": "the toggle hotkey is ignored and recording continues until the PTT keys are released",
-        "type": "edge"
-      },
-      {
-        "id": "SC-005",
-        "given": "the user opens the Settings menu",
-        "when": "they look at the menu items",
-        "then": "there are no Toggle Mode or Push-to-Talk Mode radio buttons; only hotkey configuration buttons are shown",
+        "given": "the app is running in the system tray",
+        "when": "the user right-clicks the icon and selects Quit",
+        "then": "the app exits and the tray icon disappears",
         "type": "behavioral"
       }
     ],
     "US-002": [
       {
+        "id": "SC-004",
+        "given": "the app is running and idle",
+        "when": "the user presses Ctrl+Shift+D from any application",
+        "then": "the tray icon changes to indicate recording and a start sound plays",
+        "type": "behavioral"
+      },
+      {
+        "id": "SC-005",
+        "given": "the app is currently recording",
+        "when": "the user presses Ctrl+Shift+D again",
+        "then": "recording stops, a stop sound plays, and the tray icon returns to idle state",
+        "type": "behavioral"
+      },
+      {
         "id": "SC-006",
-        "given": "the app has been running for an extended period and the audio output device changes (e.g., headphones connected)",
-        "when": "the user starts a new recording",
-        "then": "the start-recording beep plays audibly through the new audio device",
-        "type": "behavioral"
-      },
-      {
-        "id": "SC-007",
-        "given": "the audio engine has silently stopped due to a system audio reconfiguration",
-        "when": "the user triggers a recording",
-        "then": "the engine auto-recovers and the feedback sound plays without requiring an app restart",
-        "type": "behavioral"
-      },
-      {
-        "id": "SC-008",
-        "given": "the app is running and multiple rapid recordings are performed",
-        "when": "beepOn and beepOff are called in quick succession across many recording cycles",
-        "then": "sounds play correctly each time without glitches, stuck states, or silence due to corrupted audio state",
-        "type": "edge"
-      },
-      {
-        "id": "SC-009",
-        "given": "the audio engine restarts due to a configuration change",
-        "when": "the restart occurs",
-        "then": "a log entry is written indicating the engine was restarted and the reason",
+        "given": "the app recorded a 5-second audio clip",
+        "when": "recording is stopped",
+        "then": "a temporary WAV file exists with 16kHz mono PCM data suitable for Whisper processing",
         "type": "contract"
       }
     ],
     "US-003": [
       {
+        "id": "SC-007",
+        "given": "the user has just dictated 'Hello world this is a test' and stopped recording",
+        "when": "transcription completes",
+        "then": "the transcribed text appears pasted at the cursor position in the previously active application",
+        "type": "behavioral"
+      },
+      {
+        "id": "SC-008",
+        "given": "the app is launched for the first time and no Whisper model exists in %APPDATA%\\Dikta\\models\\",
+        "when": "the user attempts to record",
+        "then": "a dialog appears explaining that the Whisper model needs to be downloaded before first use",
+        "type": "behavioral"
+      },
+      {
+        "id": "SC-009",
+        "given": "the app is running with airplane mode enabled (no network)",
+        "when": "the user records and transcribes a clip",
+        "then": "transcription succeeds using the local model with no network errors",
+        "type": "edge"
+      },
+      {
         "id": "SC-010",
-        "given": "the user opens the Advanced menu",
-        "when": "they look at the menu items",
-        "then": "a Mute Sounds option is visible with a checkmark indicating the current state",
-        "type": "behavioral"
-      },
-      {
-        "id": "SC-011",
-        "given": "the user has enabled Mute Sounds in the Advanced menu",
-        "when": "they start and stop a recording",
-        "then": "no beep sounds are heard at recording start or transcription completion",
-        "type": "behavioral"
-      },
-      {
-        "id": "SC-012",
-        "given": "a fresh install of the app with no existing config file",
-        "when": "the app launches and the user makes a recording",
-        "then": "feedback sounds play normally because mute defaults to off",
-        "type": "edge"
-      },
-      {
-        "id": "SC-013",
-        "given": "an existing config file from v0.1 that has no mute_sounds field",
-        "when": "the app loads the config",
-        "then": "the config loads without error and mute defaults to off",
-        "type": "edge"
+        "given": "the user dictates a 30-second clip on a modern x64 machine",
+        "when": "transcription runs",
+        "then": "the result is returned in under 5 seconds",
+        "type": "contract"
       }
     ],
     "US-004": [
       {
-        "id": "SC-014",
-        "given": "the codebase after all changes are complete",
-        "when": "a project-wide search is performed for activeMode, activeHotkeyMode, activeHotkey, or setHotkeyMode",
-        "then": "zero matches are found in production code (excluding git history and this scenarios file)",
-        "type": "contract"
-      },
-      {
-        "id": "SC-015",
-        "given": "a user upgrading from v0.1 with a config file containing the active_mode field",
-        "when": "the app loads the old config",
-        "then": "the config loads successfully, the active_mode field is silently ignored, and both hotkeys work",
+        "id": "SC-011",
+        "given": "the user opens Settings from the tray menu",
+        "when": "they click the hotkey field and press Ctrl+Alt+R",
+        "then": "the new hotkey is captured, displayed in the field, and works globally after saving",
         "type": "behavioral"
       },
       {
-        "id": "SC-016",
-        "given": "the app saves a new config after the upgrade",
-        "when": "the config JSON is inspected",
-        "then": "the version field is 3 and there is no active_mode key present",
-        "type": "contract"
+        "id": "SC-012",
+        "given": "the user changes the language to Swedish in Settings and restarts the app",
+        "when": "they dictate in Swedish",
+        "then": "transcription produces Swedish text and the language setting persists",
+        "type": "behavioral"
+      },
+      {
+        "id": "SC-013",
+        "given": "the user has dictated 3 different texts in the current session",
+        "when": "they open the History submenu from the tray icon",
+        "then": "all 3 transcriptions appear as entries; clicking one copies its full text to the clipboard",
+        "type": "behavioral"
+      },
+      {
+        "id": "SC-014",
+        "given": "the app is launched on a machine where microphone privacy is disabled for desktop apps",
+        "when": "the app starts",
+        "then": "a dialog appears explaining that microphone access is needed and how to enable it in Windows Settings > Privacy > Microphone",
+        "type": "edge"
+      },
+      {
+        "id": "SC-015",
+        "given": "the user has 10+ transcriptions in history and restarts the app",
+        "when": "they open the History submenu",
+        "then": "the last 10 entries are shown, confirming history persists across restarts",
+        "type": "behavioral"
       }
     ]
   }
