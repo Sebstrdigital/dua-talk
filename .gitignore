@@ -169,3 +169,6 @@ icon.iconset/
 build/
 dist/
 *.certSigningRequest
+.takt/
+stories.json
+tasks/
