@@ -8,6 +8,7 @@ public class AudioRecorder : IDisposable
     private WaveInEvent? _waveIn;
     private WaveFileWriter? _writer;
     private string? _tempFilePath;
+    private TaskCompletionSource<string>? _stopTcs;
 
     public bool IsRecording { get; private set; }
 
@@ -24,12 +25,23 @@ public class AudioRecorder : IDisposable
             BufferMilliseconds = 100
         };
 
-        _writer = new WaveFileWriter(_tempFilePath, waveFormat);
+        try
+        {
+            _writer = new WaveFileWriter(_tempFilePath, waveFormat);
+        }
+        catch
+        {
+            _waveIn.Dispose();
+            _waveIn = null;
+            throw;
+        }
 
         _waveIn.DataAvailable += (s, e) =>
         {
             _writer?.Write(e.Buffer, 0, e.BytesRecorded);
         };
+
+        _waveIn.RecordingStopped += OnRecordingStopped;
 
         _waveIn.StartRecording();
         IsRecording = true;
@@ -37,21 +49,39 @@ public class AudioRecorder : IDisposable
         return _tempFilePath;
     }
 
-    public string StopRecording()
+    public Task<string> StopRecordingAsync()
     {
-        _waveIn?.StopRecording();
-        _writer?.Dispose();
-        _waveIn?.Dispose();
+        _stopTcs = new TaskCompletionSource<string>();
 
-        _waveIn = null;
+        _waveIn?.StopRecording();
+
+        return _stopTcs.Task;
+    }
+
+    private void OnRecordingStopped(object? sender, StoppedEventArgs e)
+    {
+        _writer?.Dispose();
         _writer = null;
+
+        _waveIn?.Dispose();
+        _waveIn = null;
+
         IsRecording = false;
 
-        return _tempFilePath ?? "";
+        _stopTcs?.TrySetResult(_tempFilePath ?? "");
     }
 
     public void Dispose()
     {
-        if (IsRecording) StopRecording();
+        if (IsRecording)
+        {
+            _waveIn?.StopRecording();
+            // RecordingStopped will handle cleanup
+        }
+        else
+        {
+            _writer?.Dispose();
+            _waveIn?.Dispose();
+        }
     }
 }

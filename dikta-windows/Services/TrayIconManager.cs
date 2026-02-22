@@ -15,6 +15,7 @@ public class TrayIconManager : IDisposable
 
     private NotifyIcon? _notifyIcon;
     private bool _isRecording;
+    private bool _processing;
 
     public TrayIconManager(ConfigService configService, HotkeyManager hotkeyManager)
     {
@@ -75,7 +76,7 @@ public class TrayIconManager : IDisposable
             var preview = item.Text.Length > 50 ? item.Text[..50] + "..." : item.Text;
             historyMenu.DropDownItems.Add(preview, null, (s, e) =>
             {
-                System.Windows.Clipboard.SetText(item.Text);
+                System.Windows.Forms.Clipboard.SetText(item.Text);
             });
         }
 
@@ -87,50 +88,59 @@ public class TrayIconManager : IDisposable
 
     private async void OnHotkeyPressed()
     {
-        if (_isRecording)
+        if (_processing) return;
+
+        try
         {
-            // Stop recording
-            _audioFeedback.PlayStop();
-            var audioPath = _recorder.StopRecording();
-            _isRecording = false;
-
-            // TODO: update tray icon to processing state
-
-            // Transcribe
-            var text = await _transcriber.TranscribeAsync(audioPath);
-
-            if (!string.IsNullOrWhiteSpace(text))
+            if (_isRecording)
             {
-                ClipboardManager.CopyAndPaste(text);
-                _history.Add(text, _configService.Config.Language);
-            }
+                _processing = true;
 
-            // TODO: update tray icon to idle state
+                // Stop recording
+                _audioFeedback.PlayStop();
+                var audioPath = await _recorder.StopRecordingAsync();
+                _isRecording = false;
+
+                // Transcribe
+                var text = await _transcriber.TranscribeAsync(audioPath);
+
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    await ClipboardManager.CopyAndPasteAsync(text);
+                    _history.Add(text, _configService.Config.Language);
+                }
+
+                _processing = false;
+            }
+            else
+            {
+                // Start recording
+                if (!_transcriber.IsModelAvailable())
+                {
+                    System.Windows.MessageBox.Show(
+                        $"Whisper model not found.\n\nPlease download the model file to:\n{ConfigService.ModelsDir}",
+                        "Dikta — Model Missing",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Warning);
+                    return;
+                }
+
+                _audioFeedback.PlayStart();
+                _recorder.StartRecording();
+                _isRecording = true;
+            }
         }
-        else
+        catch (Exception ex)
         {
-            // Start recording
-            if (!_transcriber.IsModelAvailable())
-            {
-                System.Windows.MessageBox.Show(
-                    $"Whisper model not found.\n\nPlease download the model file to:\n{ConfigService.ModelsDir}",
-                    "Dikta — Model Missing",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Warning);
-                return;
-            }
-
-            _audioFeedback.PlayStart();
-            _recorder.StartRecording();
-            _isRecording = true;
-
-            // TODO: update tray icon to recording state
+            _processing = false;
+            _isRecording = false;
+            System.Diagnostics.Debug.WriteLine($"OnHotkeyPressed error: {ex}");
         }
     }
 
     private void OpenSettings()
     {
-        // TODO: implement settings window (US-003)
+        // TODO: implement settings window
     }
 
     public void Dispose()

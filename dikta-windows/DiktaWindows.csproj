@@ -7,7 +7,6 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <ApplicationIcon>Resources\dikta.ico</ApplicationIcon>
     <AssemblyName>DiktaWindows</AssemblyName>
     <RootNamespace>DiktaWindows</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -16,14 +15,8 @@
 
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="Whisper.net" Version="1.8.0" />
-    <PackageReference Include="Whisper.net.Runtime" Version="1.8.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Sounds\*.wav">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <PackageReference Include="Whisper.net" Version="1.9.0" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.9.0" />
   </ItemGroup>
 
 </Project>

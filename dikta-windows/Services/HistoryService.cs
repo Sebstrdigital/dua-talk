@@ -7,9 +7,19 @@ namespace DiktaWindows.Services;
 public class HistoryService
 {
     private const int MaxEntries = 50;
+    private readonly object _lock = new();
     private List<HistoryItem> _items = new();
 
-    public IReadOnlyList<HistoryItem> Items => _items.AsReadOnly();
+    public IReadOnlyList<HistoryItem> Items
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _items.ToList().AsReadOnly();
+            }
+        }
+    }
 
     public HistoryService()
     {
@@ -18,15 +28,18 @@ public class HistoryService
 
     public void Add(string text, string language)
     {
-        _items.Insert(0, new HistoryItem
+        lock (_lock)
         {
-            Text = text,
-            Timestamp = DateTime.UtcNow,
-            Language = language
-        });
+            _items.Insert(0, new HistoryItem
+            {
+                Text = text,
+                Timestamp = DateTime.UtcNow,
+                Language = language
+            });
 
-        if (_items.Count > MaxEntries)
-            _items = _items.Take(MaxEntries).ToList();
+            if (_items.Count > MaxEntries)
+                _items = _items.Take(MaxEntries).ToList();
+        }
 
         Save();
     }
@@ -41,7 +54,13 @@ public class HistoryService
 
     private void Save()
     {
-        var json = JsonSerializer.Serialize(_items, new JsonSerializerOptions { WriteIndented = true });
+        List<HistoryItem> snapshot;
+        lock (_lock)
+        {
+            snapshot = _items.ToList();
+        }
+
+        var json = JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(ConfigService.HistoryPath, json);
     }
 }

@@ -1,4 +1,3 @@
-using System.IO;
 using System.Media;
 
 namespace DiktaWindows.Services;
@@ -15,21 +14,12 @@ public class AudioFeedback
     public void PlayStart()
     {
         if (_configService.Config.MuteSounds) return;
-        PlaySound("start.wav");
+        SystemSounds.Beep.Play();
     }
 
     public void PlayStop()
     {
         if (_configService.Config.MuteSounds) return;
-        PlaySound("stop.wav");
-    }
-
-    private static void PlaySound(string filename)
-    {
-        var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Sounds", filename);
-        if (!File.Exists(path)) return;
-
-        var player = new SoundPlayer(path);
-        player.Play();
+        SystemSounds.Asterisk.Play();
     }
 }
