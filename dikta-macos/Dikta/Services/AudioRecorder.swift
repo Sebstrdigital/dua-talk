@@ -22,6 +22,10 @@ final class AudioRecorder {
     /// Target sample rate for Whisper (16kHz)
     static let sampleRate: Double = 16000
 
+    /// Maximum audio buffer size: 5 minutes at 16kHz (4,800,000 samples).
+    /// When reached the captured audio is sent for processing immediately.
+    static let maxBufferSamples: Int = 4_800_000
+
     /// Check if microphone permission is granted
     static func checkPermission() async -> Bool {
         let status = AVCaptureDevice.authorizationStatus(for: .audio)
@@ -127,7 +131,18 @@ final class AudioRecorder {
             bufferLock.lock()
             audioBuffer.append(contentsOf: samples)
             let captured = audioBuffer
+            let bufferFull = audioBuffer.count >= Self.maxBufferSamples
             bufferLock.unlock()
+
+            // Hard buffer limit: 5 minutes at 16kHz — trigger processing immediately
+            if bufferFull {
+                silenceStartDate = nil
+                let callback = onSilenceAutoStop
+                DispatchQueue.main.async {
+                    callback?(captured)
+                }
+                return
+            }
 
             // Silence detection: compute RMS of this buffer chunk
             checkSilenceAutoStop(samples: samples, captured: captured)
