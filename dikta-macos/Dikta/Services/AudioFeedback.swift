@@ -156,8 +156,13 @@ final class AudioFeedback {
     ///   - duration: Total duration in seconds
     ///   - attackTime: Attack time in seconds (fade in)
     private func playBubble(startFreq: Double, endFreq: Double, duration: Double, attackTime: Double) {
-        // Health check: restart engine if it stopped unexpectedly
-        if isReady && !(audioEngine?.isRunning ?? false) {
+        // Health check: acquire lock first, then inspect engine state so the render thread
+        // cannot observe a stale engine reference while we rebuild.
+        os_unfair_lock_lock(&lock)
+        let engineStoppedUnexpectedly = isReady && !(audioEngine?.isRunning ?? false)
+        os_unfair_lock_unlock(&lock)
+
+        if engineStoppedUnexpectedly {
             AppLogger.audio.warning("Audio engine stopped unexpectedly, restarting...")
             rebuildEngine()
         }
