@@ -17,6 +17,7 @@ enum AppState {
 final class MenuBarViewModel: ObservableObject {
     // State
     @Published var appState: AppState = .loading
+    static var isModelLoaded = false
 
     // Services
     let configService: ConfigService
@@ -91,6 +92,10 @@ final class MenuBarViewModel: ObservableObject {
 
         if transcriber.isReady {
             appState = .idle
+
+            // Notify About window that model is ready
+            Self.isModelLoaded = true
+            NotificationCenter.default.post(name: .appModelLoaded, object: nil)
 
             // Start hotkey listener
             hotkeyManager.start()

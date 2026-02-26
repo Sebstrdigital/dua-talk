@@ -33,7 +33,7 @@ final class OnboardingWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "Welcome to Dikta"
+        window.title = "About"
         window.contentView = hostingView
         window.center()
         window.level = .floating
@@ -53,10 +53,11 @@ final class OnboardingWindowController {
     }
 }
 
-// MARK: - TTS Setup
+// MARK: - App Ready State
 
 extension Notification.Name {
     static let ttsInstallCompleted = Notification.Name("ttsInstallCompleted")
+    static let appModelLoaded = Notification.Name("appModelLoaded")
 }
 
 enum TTSSetupStatus: Equatable {
@@ -252,6 +253,7 @@ struct OnboardingView: View {
     @StateObject private var updateChecker = UpdateChecker()
     @State private var micStatus: PermissionStatus = .unknown
     @State private var accessibilityStatus: Bool = false
+    @State private var isAppReady: Bool = false
 
     enum PermissionStatus {
         case unknown, granted, denied
@@ -334,14 +336,23 @@ struct OnboardingView: View {
                 .padding(.horizontal, 32)
                 .padding(.bottom, 12)
 
-            // Get Started
+            // Get Started / Warming up
             Button(action: onDismiss) {
-                Text("Get Started")
+                if isAppReady {
+                    Text("Start Dictating")
+                        .frame(maxWidth: .infinity)
+                } else {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Warming up...")
+                    }
                     .frame(maxWidth: .infinity)
+                }
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .disabled(ttsSetup.status.isInstalling)
+            .disabled(!isAppReady || ttsSetup.status.isInstalling)
             .padding(.horizontal, 32)
             .padding(.bottom, 24)
         }
@@ -349,6 +360,10 @@ struct OnboardingView: View {
         .onAppear {
             checkPermissions()
             updateChecker.check()
+            isAppReady = MenuBarViewModel.isModelLoaded
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .appModelLoaded)) { _ in
+            isAppReady = true
         }
         .task {
             // Poll permissions every 5 seconds until all granted

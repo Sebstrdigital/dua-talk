@@ -1,125 +1,32 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Workflow Rules — READ FIRST
+
+**Do not write code without explicit approval.** When the user describes a change, bug, or feature:
+
+1. **Analyze** — Read the relevant code, understand the problem
+2. **Propose** — Explain your approach concisely
+3. **Wait** — Get explicit approval before touching any code
+4. **Implement** — Only then make changes
+
+**Use takt for non-trivial work.** For features likely 3+ stories, suggest `/takt-prd` → `/takt` → `takt solo`/`takt team`. Opus is the analyst/architect. Sonnet implements via takt agents.
 
 ## Project Overview
 
-Dikta is a minimal, fully offline dictation app for macOS (v0.3). It transcribes speech to clipboard using a global hotkey, running as a menu bar app. No cloud services required.
+Dikta is a minimal, fully offline dictation app for macOS (v0.3). Press a hotkey, speak, and your words are pasted. Menu bar app, no cloud services.
 
-The primary implementation is **dikta-macos/** (native Swift/SwiftUI). A Windows port lives in **dikta-windows/** (.NET 8/C#/WPF). A legacy Python implementation exists in **dikta-python/**.
+- **dikta-macos/** — Primary implementation (Swift/SwiftUI/WhisperKit)
+- **dikta-windows/** — Windows port (.NET 8/C#/WPF)
+- **dikta-python/** — Legacy, not actively developed
 
-## Swift Development
+## Build & Run
 
 ```bash
 cd dikta-macos
-
-# Build and run
-swift build
-.build/debug/Dikta
-
-# Or open in Xcode
-open Dikta.xcodeproj
+open Dikta.xcodeproj        # Development
+./scripts/build-release.sh   # Release: signed, notarized DMG → build/Dikta.dmg
 ```
 
-### Release Build
+## Detailed Docs
 
-The full release script handles archiving, signing, bundling the Whisper model, notarization, and DMG creation:
-
-```bash
-./scripts/build-release.sh
-```
-
-Output: `dikta-macos/build/Dikta.dmg`
-
-**Important build note**: The re-signing step after bundling the Whisper model must pass `--entitlements` or they get stripped. This is handled in the script.
-
-## Architecture
-
-```
-Hotkey → Recording → WhisperKit STT → Auto-paste + History
-```
-
-### Key Files (Swift)
-
-- **Models/**
-  - `AppConfig.swift` — Full config structure, persisted as JSON
-  - `HotkeyConfig.swift` — Modifier keys (shift, ctrl, cmd, alt, fn), hotkey matching logic
-  - `WhisperModel.swift` — Available models: small, medium
-  - `MicDistance.swift` — Close/Normal/Far presets for speech detection sensitivity
-  - `Language.swift` — Supported languages: English, Swedish, Indonesian
-- **Services/**
-  - `HotkeyManager.swift` — CGEventTap-based global hotkey detection (flagsChanged + keyDown/keyUp)
-  - `ConfigService.swift` — Singleton config manager, persists to `~/Library/Application Support/Dikta/config.json`
-  - `TextToSpeechService.swift` — Kokoro TTS integration via local Python server
-  - `TextSelectionService.swift` — Gets selected text via Accessibility API
-  - `ClipboardManager.swift` — Clipboard operations and auto-paste (Cmd+V simulation)
-- **ViewModels/**
-  - `MenuBarViewModel.swift` — Main app state machine (idle/loading/recording/processing/speaking), delegates hotkey events
-- **Views/**
-  - `MenuBarView.swift` — Menu structure: Settings, Advanced, History
-  - `OnboardingWindow.swift` — Setup screen with permission checks, TTS install, version display
-  - `HotkeyRecordingWindow.swift` — Hotkey capture UI
-
-### Hotkey Detection
-
-Uses `CGEvent.tapCreate` listening for `keyDown`, `keyUp`, and `flagsChanged` events. Modifier-only hotkeys (e.g., Shift+Ctrl) are detected via `flagsChanged`. The fn/Globe key uses `.maskSecondaryFn`.
-
-`HotkeyConfig.matchesModifiers()` does **strict matching** — all modifiers in `ModifierKey.allCases` must match exactly (required pressed, non-required not pressed).
-
-### Config
-
-Persisted at `~/Library/Application Support/Dikta/config.json`. Key fields: `hotkeys` (toggle, push_to_talk, text_to_speech, language_toggle), `whisper_model`, `language`, `mic_distance`, `mute_sounds`, `mute_notifications`.
-
-## Hotkey Modes
-
-- **Toggle** (default): Press hotkey to start, press again to stop
-- **Push-to-Talk**: Hold hotkey to record, release to stop
-- **Read Aloud**: Press hotkey to read selected text via TTS
-- **Language Toggle**: Press hotkey to cycle between languages
-
-Default hotkeys: Toggle = Shift+Ctrl, PTT = Cmd+Shift, TTS = Cmd+Alt, Language = Cmd+Ctrl. All customizable via Hotkeys menu.
-
-## Text-to-Speech
-
-Kokoro TTS is set up from the onboarding window (About in menu bar). Creates a Python venv at `~/Library/Application Support/Dikta/venv` and installs kokoro + dependencies.
-
-## Menu Structure
-
-```
-Dikta
-├── Stop Recording / Stop Speaking / Processing...
-├── History >
-├── Hotkeys >
-│   ├── Set Record Hotkey...
-│   ├── Set Push-to-Talk Hotkey...
-│   ├── Set Read Aloud Hotkey...
-│   └── Set Language Toggle Hotkey...
-├── Audio >
-│   ├── Mute Sounds
-│   ├── Mute Notifications
-│   └── Mic Distance: Close / Normal / Far
-├── Write in: (language) >
-│   ├── English
-│   ├── Svenska
-│   └── Bahasa Indonesia
-├── Advanced >
-│   ├── Whisper Model: Small / Medium
-│   └── Voice: (Kokoro voices)
-├── About
-└── Quit
-```
-
-## macOS Permissions
-
-- **Microphone** — for recording (entitlement: `com.apple.security.device.audio-input`)
-- **Accessibility** — for global hotkeys and auto-paste
-
-## Python Implementation (Legacy)
-
-```bash
-cd python
-uv sync && source .venv/bin/activate
-python dua_talk.py
-```
-
-Not actively developed. See `dikta-python/` for details.
+- **[Architecture](docs/architecture.md)** — Key files, hotkey system, config, menu structure, permissions
