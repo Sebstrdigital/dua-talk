@@ -22,8 +22,6 @@
 		100000000000000000000012 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000012 /* AudioRecorder.swift */; };
 		100000000000000000000013 /* AudioFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000013 /* AudioFeedback.swift */; };
 		100000000000000000000014 /* Transcriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000014 /* Transcriber.swift */; };
-		100000000000000000000025 /* LocalLLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000025 /* LocalLLMService.swift */; };
-		100000000000000000000026 /* LLMSetupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000026 /* LLMSetupManager.swift */; };
 		100000000000000000000016 /* ClipboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000016 /* ClipboardManager.swift */; };
 		100000000000000000000017 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000017 /* HotkeyManager.swift */; };
 		100000000000000000000018 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000018 /* Logger.swift */; };
@@ -38,8 +36,6 @@
 		100000000000000000000031 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000031 /* MenuBarView.swift */; };
 		100000000000000000000032 /* HotkeyRecordingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000032 /* HotkeyRecordingWindow.swift */; };
 		100000000000000000000033 /* OnboardingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000033 /* OnboardingWindow.swift */; };
-		100000000000000000000034 /* CustomPromptWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000034 /* CustomPromptWindow.swift */; };
-
 		/* App */
 		100000000000000000000041 /* DiktaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000041 /* DiktaApp.swift */; };
 
@@ -69,8 +65,6 @@
 		200000000000000000000012 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
 		200000000000000000000013 /* AudioFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFeedback.swift; sourceTree = "<group>"; };
 		200000000000000000000014 /* Transcriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transcriber.swift; sourceTree = "<group>"; };
-		200000000000000000000025 /* LocalLLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalLLMService.swift; sourceTree = "<group>"; };
-		200000000000000000000026 /* LLMSetupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMSetupManager.swift; sourceTree = "<group>"; };
 		200000000000000000000016 /* ClipboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardManager.swift; sourceTree = "<group>"; };
 		200000000000000000000017 /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
 		200000000000000000000018 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
@@ -85,8 +79,6 @@
 		200000000000000000000031 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		200000000000000000000032 /* HotkeyRecordingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyRecordingWindow.swift; sourceTree = "<group>"; };
 		200000000000000000000033 /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
-		200000000000000000000034 /* CustomPromptWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPromptWindow.swift; sourceTree = "<group>"; };
-
 		/* App */
 		200000000000000000000041 /* DiktaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiktaApp.swift; sourceTree = "<group>"; };
 
@@ -157,8 +149,6 @@
 				200000000000000000000012 /* AudioRecorder.swift */,
 				200000000000000000000013 /* AudioFeedback.swift */,
 				200000000000000000000014 /* Transcriber.swift */,
-				200000000000000000000025 /* LocalLLMService.swift */,
-				200000000000000000000026 /* LLMSetupManager.swift */,
 				200000000000000000000016 /* ClipboardManager.swift */,
 				200000000000000000000017 /* HotkeyManager.swift */,
 				200000000000000000000018 /* Logger.swift */,
@@ -183,7 +173,6 @@
 				200000000000000000000031 /* MenuBarView.swift */,
 				200000000000000000000032 /* HotkeyRecordingWindow.swift */,
 				200000000000000000000033 /* OnboardingWindow.swift */,
-				200000000000000000000034 /* CustomPromptWindow.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -295,8 +284,6 @@
 				100000000000000000000012 /* AudioRecorder.swift in Sources */,
 				100000000000000000000013 /* AudioFeedback.swift in Sources */,
 				100000000000000000000014 /* Transcriber.swift in Sources */,
-				100000000000000000000025 /* LocalLLMService.swift in Sources */,
-				100000000000000000000026 /* LLMSetupManager.swift in Sources */,
 				100000000000000000000007 /* AppPaths.swift in Sources */,
 				100000000000000000000016 /* ClipboardManager.swift in Sources */,
 				100000000000000000000017 /* HotkeyManager.swift in Sources */,
@@ -312,7 +299,6 @@
 				100000000000000000000027 /* UpdateChecker.swift in Sources */,
 				100000000000000000000032 /* HotkeyRecordingWindow.swift in Sources */,
 				100000000000000000000033 /* OnboardingWindow.swift in Sources */,
-				100000000000000000000034 /* CustomPromptWindow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,6 +1,16 @@
 import Foundation
 
-/// Available output modes for dictation formatting
+/// Output mode for dictation post-processing.
+///
+/// This type is retained for **backward-compatible config persistence** only.
+/// The LLM post-processing pipeline (LLMService, LocalLLMService) was removed in v0.4
+/// because WhisperKit transcription quality is sufficient without a cleanup pass.
+///
+/// `OutputMode` is still referenced by `HistoryItem` and `AppConfig` to decode existing
+/// `config.json` files gracefully. Removing it would break deserialization for users who
+/// upgrade from v0.3 or earlier.
+///
+/// The `prompt(for:)` method and its localized strings are retained but unused at runtime.
 enum OutputMode: String, Codable, CaseIterable {
     case raw = "raw"
     case general = "general"
