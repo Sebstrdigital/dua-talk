@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import AVFoundation
+import ServiceManagement
 
 /// Window controller for first-launch onboarding
 @MainActor
@@ -25,10 +26,10 @@ final class OnboardingWindowController {
         }
 
         let hostingView = NSHostingView(rootView: contentView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 500, height: 580)
+        hostingView.frame = NSRect(x: 0, y: 0, width: 500, height: 630)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 580),
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 630),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -256,6 +257,7 @@ struct OnboardingView: View {
     @State private var accessibilityStatus: Bool = false
     @State private var isAppReady: Bool = false
     @State private var modelLoadingProgress: Double = 0
+    @State private var launchAtLogin: Bool = false
 
     enum PermissionStatus {
         case unknown, granted, denied
@@ -325,6 +327,13 @@ struct OnboardingView: View {
                     title: "Text-to-Speech",
                     subtitle: "Optional — read selected text aloud"
                 ) { ttsStatusView }
+
+                // 4. Launch at Login
+                setupRow(
+                    icon: "arrow.up.right.square",
+                    title: "Launch at Login",
+                    subtitle: "Start Dikta automatically when you log in"
+                ) { launchAtLoginToggle }
             }
             .padding(.horizontal, 32)
             .padding(.top, 16)
@@ -367,9 +376,10 @@ struct OnboardingView: View {
             .padding(.horizontal, 32)
             .padding(.bottom, 24)
         }
-        .frame(width: 500, height: 580)
+        .frame(width: 500, height: 630)
         .onAppear {
             checkPermissions()
+            checkLaunchAtLogin()
             updateChecker.check()
             isAppReady = MenuBarViewModel.isModelLoaded
         }
@@ -494,6 +504,35 @@ struct OnboardingView: View {
                     .foregroundColor(.red)
                     .lineLimit(1)
             }
+        }
+    }
+
+    // MARK: - Launch at Login
+
+    @ViewBuilder
+    private var launchAtLoginToggle: some View {
+        Toggle("", isOn: $launchAtLogin)
+            .labelsHidden()
+            .onChange(of: launchAtLogin) { _, enabled in
+                setLaunchAtLogin(enabled)
+            }
+    }
+
+    private func checkLaunchAtLogin() {
+        launchAtLogin = SMAppService.mainApp.status == .enabled
+    }
+
+    private func setLaunchAtLogin(_ enabled: Bool) {
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+        } catch {
+            AppLogger.general.error("Failed to \(enabled ? "register" : "unregister") launch at login: \(error.localizedDescription)")
+            // Revert toggle if operation failed
+            launchAtLogin = SMAppService.mainApp.status == .enabled
         }
     }
 
