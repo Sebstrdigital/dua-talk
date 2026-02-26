@@ -9,7 +9,7 @@ All notable changes to Dikta will be documented in this file.
 - Language hotkey (Cmd+Ctrl) — cycle between languages without opening the menu
 - Indonesian language support
 - Menu restructured: Hotkeys, Audio, Write in, Advanced sections
-- "Setup..." renamed to "About..."
+- "Setup..." renamed to "About"
 
 ### Fixes
 - Speech detection thresholds now dynamic instead of hardcoded (was causing false "No Speech" at normal distance)
