@@ -46,7 +46,7 @@
 
 		/* WhisperKit */
 		100000000000000000000061 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 300000000000000000000001 /* WhisperKit */; };
-		100000000000000000000062 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 300000000000000000000002 /* LlamaSwift */; };
+
 
 		/* Tests */
 		100000000000000000000071 /* DiktaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000071 /* DiktaTests.swift */; };
@@ -107,7 +107,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				100000000000000000000061 /* WhisperKit in Frameworks */,
-				100000000000000000000062 /* LlamaSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -257,7 +256,6 @@
 			name = Dikta;
 			packageProductDependencies = (
 				300000000000000000000001 /* WhisperKit */,
-				300000000000000000000002 /* LlamaSwift */,
 			);
 			productName = Dikta;
 			productReference = 400000000000000000000001 /* Dikta.app */;
@@ -307,7 +305,6 @@
 			mainGroup = 600000000000000000000000;
 			packageReferences = (
 				A00000000000000000000001 /* XCRemoteSwiftPackageReference "WhisperKit" */,
-				A00000000000000000000002 /* XCRemoteSwiftPackageReference "llama.swift" */,
 			);
 			productRefGroup = 600000000000000000000099 /* Products */;
 			projectDirPath = "";
@@ -621,15 +618,7 @@
 				minimumVersion = 0.9.0;
 			};
 		};
-		A00000000000000000000002 /* XCRemoteSwiftPackageReference "llama.swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/mattt/llama.swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.8028.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
+	/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		300000000000000000000001 /* WhisperKit */ = {
@@ -637,12 +626,7 @@
 			package = A00000000000000000000001 /* XCRemoteSwiftPackageReference "WhisperKit" */;
 			productName = WhisperKit;
 		};
-		300000000000000000000002 /* LlamaSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A00000000000000000000002 /* XCRemoteSwiftPackageReference "llama.swift" */;
-			productName = LlamaSwift;
-		};
-/* End XCSwiftPackageProductDependency section */
+	/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 900000000000000000000001 /* Project object */;
 }

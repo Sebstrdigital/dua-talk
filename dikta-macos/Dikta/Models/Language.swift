@@ -14,6 +14,11 @@ enum Language: String, Codable, CaseIterable {
         }
     }
 
+    /// Short code for menu bar display
+    var menuBarCode: String {
+        rawValue.uppercased()
+    }
+
     /// Whisper language code
     var whisperCode: String {
         rawValue

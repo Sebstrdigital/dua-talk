@@ -50,21 +50,25 @@ struct DiktaApp: App {
 
     @ViewBuilder
     private var menuBarLabel: some View {
-        switch viewModel.appState {
-        case .idle:
-            Image(systemName: "mic")
-        case .loading:
-            Image(systemName: "hourglass")
-        case .recording:
-            Image(systemName: "record.circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.red)
-        case .processing:
-            Image(systemName: "hourglass")
-        case .speaking:
-            Image(systemName: "speaker.wave.2.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.blue)
+        let icon: some View = {
+            switch viewModel.appState {
+            case .idle:
+                return Image(systemName: "mic")
+            case .loading:
+                return Image(systemName: "hourglass")
+            case .recording:
+                return Image(systemName: "record.circle.fill")
+            case .processing:
+                return Image(systemName: "hourglass")
+            case .speaking:
+                return Image(systemName: "speaker.wave.2.fill")
+            }
+        }()
+
+        HStack(spacing: 2) {
+            icon
+            Text(viewModel.configService.language.menuBarCode)
+                .font(.caption2)
         }
     }
 }

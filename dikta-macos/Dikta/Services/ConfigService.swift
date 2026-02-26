@@ -40,9 +40,9 @@ final class ConfigService: ObservableObject {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let data = try encoder.encode(config)
-            // Atomic write: write to temp file first, then rename to avoid corruption on crash
+            // Atomic write: write to temp file, then rename to avoid corruption on crash
             let tempFile = configFile.appendingPathExtension("tmp")
-            try data.write(to: tempFile, options: .atomic)
+            try data.write(to: tempFile)
             _ = try FileManager.default.replaceItemAt(configFile, withItemAt: tempFile)
         } catch {
             AppLogger.config.error("Failed to save config: \(error.localizedDescription)")
