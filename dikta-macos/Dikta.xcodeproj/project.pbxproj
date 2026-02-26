@@ -47,6 +47,10 @@
 		/* WhisperKit */
 		100000000000000000000061 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 300000000000000000000001 /* WhisperKit */; };
 		100000000000000000000062 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 300000000000000000000002 /* LlamaSwift */; };
+
+		/* Tests */
+		100000000000000000000071 /* DiktaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000071 /* DiktaTests.swift */; };
+		100000000000000000000072 /* Dikta.app in Frameworks */ = {isa = PBXBuildFile; fileRef = 400000000000000000000001 /* Dikta.app */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -89,8 +93,12 @@
 		200000000000000000000054 /* kokoro_server.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; name = kokoro_server.py; path = ../../kokoro_server.py; sourceTree = "<group>"; };
 		200000000000000000000055 /* setup.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = setup.sh; path = ../../setup.sh; sourceTree = "<group>"; };
 
+		/* Tests */
+		200000000000000000000071 /* DiktaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiktaTests.swift; sourceTree = "<group>"; };
+
 		/* Product */
 		400000000000000000000001 /* Dikta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Dikta.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		400000000000000000000002 /* DiktaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "DiktaTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +111,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		500000000000000000000004 /* Frameworks (Tests) */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -110,6 +125,7 @@
 			isa = PBXGroup;
 			children = (
 				600000000000000000000001 /* Dikta */,
+				600000000000000000000007 /* DiktaTests */,
 				600000000000000000000099 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -125,6 +141,14 @@
 				600000000000000000000006 /* Resources */,
 			);
 			path = Dikta;
+			sourceTree = "<group>";
+		};
+		600000000000000000000007 /* DiktaTests */ = {
+			isa = PBXGroup;
+			children = (
+				200000000000000000000071 /* DiktaTests.swift */,
+			);
+			path = DiktaTests;
 			sourceTree = "<group>";
 		};
 		600000000000000000000002 /* Models */ = {
@@ -193,6 +217,7 @@
 			isa = PBXGroup;
 			children = (
 				400000000000000000000001 /* Dikta.app */,
+				400000000000000000000002 /* DiktaTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -200,6 +225,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		700000000000000000000002 /* DiktaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 800000000000000000000004 /* Build configuration list for PBXNativeTarget "DiktaTests" */;
+			buildPhases = (
+				500000000000000000000005 /* Sources (Tests) */,
+				500000000000000000000004 /* Frameworks (Tests) */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C00000000000000000000001 /* PBXTargetDependency */,
+			);
+			name = DiktaTests;
+			productName = DiktaTests;
+			productReference = 400000000000000000000002 /* DiktaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		700000000000000000000001 /* Dikta */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 800000000000000000000003 /* Build configuration list for PBXNativeTarget "Dikta" */;
@@ -222,6 +264,24 @@
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		C00000000000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 900000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 700000000000000000000001;
+			remoteInfo = Dikta;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		C00000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 700000000000000000000001 /* Dikta */;
+			targetProxy = C00000000000000000000002 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		900000000000000000000001 /* Project object */ = {
@@ -254,6 +314,7 @@
 			projectRoot = "";
 			targets = (
 				700000000000000000000001 /* Dikta */,
+				700000000000000000000002 /* DiktaTests */,
 			);
 		};
 /* End PBXProject section */
@@ -272,6 +333,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		500000000000000000000005 /* Sources (Tests) */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				100000000000000000000071 /* DiktaTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		500000000000000000000002 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -481,6 +550,36 @@
 			};
 			name = Release;
 		};
+		B00000000000000000000005 /* Debug (Tests) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.duatalk.app.DiktaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dikta.app/Contents/MacOS/Dikta";
+			};
+			name = Debug;
+		};
+		B00000000000000000000006 /* Release (Tests) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.duatalk.app.DiktaTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dikta.app/Contents/MacOS/Dikta";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -498,6 +597,15 @@
 			buildConfigurations = (
 				B00000000000000000000003 /* Debug */,
 				B00000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		800000000000000000000004 /* Build configuration list for PBXNativeTarget "DiktaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B00000000000000000000005 /* Debug (Tests) */,
+				B00000000000000000000006 /* Release (Tests) */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
