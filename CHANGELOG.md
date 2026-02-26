@@ -2,6 +2,30 @@
 
 All notable changes to Dikta will be documented in this file.
 
+## [0.4] - 2026-02-26
+
+### Features
+- Menu bar language indicator — shows current language code (EN/SV/ID) next to the menu bar icon
+- Start at Login toggle in Advanced menu
+- Hotkey collision detection — warns when two modes share the same hotkey
+- Silence auto-stop trims trailing silence before sending to Whisper for cleaner results
+
+### Stability
+- Audio feedback thread safety — engine health check now runs inside the lock-protected region
+- TTS process lifecycle — checks `isRunning` before termination, reaps child processes, removes observers in `deinit`
+- Safe Accessibility API casting — prevents crashes from unexpected CoreFoundation types
+- Async Bluetooth audio route handling — non-blocking wait for HFP profile switch
+- Audio buffer hard limit (5 minutes) — prevents unbounded memory growth on very long recordings
+- HotkeyConfig `Hashable` conformance consistent with order-independent equality
+- Atomic config file writes to prevent corruption on crash
+
+### Improvements
+- Model loading uses indeterminate spinner instead of fake percentage
+- "No Speech" notification title changed from "Error" to "No Speech"
+- Transcription timeout prevents stuck processing state
+- LlamaSwift dependency removed (unused LLM pipeline cleanup)
+- Unit tests for HotkeyConfig, AppConfig, and UpdateChecker (27 tests)
+
 ## [0.3] - 2026-02-26
 
 ### Features

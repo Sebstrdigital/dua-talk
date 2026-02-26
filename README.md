@@ -62,6 +62,7 @@ Dikta
 │   ├── Svenska
 │   └── Indonesia
 ├── Advanced >
+│   ├── Start at Login
 │   ├── Whisper Model: Small / Medium
 │   └── Voice: (Kokoro TTS voices)
 ├── About
@@ -113,7 +114,7 @@ This archives, signs, bundles the Whisper model, notarizes with Apple, and produ
 
 **Text-to-speech not working** — Open the About window and click "Set Up" next to Text-to-Speech. Requires Python 3 (`/usr/bin/python3` or Homebrew).
 
-**Model loading is slow** — The Whisper model loads on first launch. Progress is shown in the About window. Subsequent launches are faster (model stays cached).
+**Model loading is slow** — The Whisper model loads on first launch. A spinner is shown in the About window. Subsequent launches are faster (model stays cached).
 
 **App won't start** — Clean and rebuild: `cd dikta-macos && rm -rf .build && swift build`
 
