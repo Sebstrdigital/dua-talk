@@ -166,6 +166,18 @@ struct AdvancedMenu: View {
 
     var body: some View {
         Menu("Advanced") {
+            Button(action: { viewModel.toggleLaunchAtLogin() }) {
+                HStack {
+                    Text("Start at Login")
+                    if viewModel.launchAtLogin {
+                        Spacer()
+                        Image(systemName: "checkmark")
+                    }
+                }
+            }
+
+            Divider()
+
             Menu("Whisper Model: \(currentModel.displayName)") {
                 ForEach(WhisperModel.allCases, id: \.self) { model in
                     Button(action: {

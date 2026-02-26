@@ -59,7 +59,6 @@ final class OnboardingWindowController {
 extension Notification.Name {
     static let ttsInstallCompleted = Notification.Name("ttsInstallCompleted")
     static let appModelLoaded = Notification.Name("appModelLoaded")
-    static let appModelLoadingProgress = Notification.Name("appModelLoadingProgress")
 }
 
 enum TTSSetupStatus: Equatable {
@@ -256,7 +255,6 @@ struct OnboardingView: View {
     @State private var micStatus: PermissionStatus = .unknown
     @State private var accessibilityStatus: Bool = false
     @State private var isAppReady: Bool = false
-    @State private var modelLoadingProgress: Double = 0
     @State private var launchAtLogin: Bool = false
 
     enum PermissionStatus {
@@ -353,14 +351,6 @@ struct OnboardingView: View {
                 if isAppReady {
                     Text("Start Dictating")
                         .frame(maxWidth: .infinity)
-                } else if modelLoadingProgress > 0 && modelLoadingProgress < 1 {
-                    HStack(spacing: 8) {
-                        ProgressView(value: modelLoadingProgress)
-                            .progressViewStyle(.linear)
-                            .frame(width: 80)
-                        Text("Loading model \(Int(modelLoadingProgress * 100))%")
-                    }
-                    .frame(maxWidth: .infinity)
                 } else {
                     HStack(spacing: 8) {
                         ProgressView()
@@ -385,12 +375,6 @@ struct OnboardingView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .appModelLoaded)) { _ in
             isAppReady = true
-            modelLoadingProgress = 1.0
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .appModelLoadingProgress)) { notification in
-            if let progress = notification.userInfo?["progress"] as? Double {
-                modelLoadingProgress = progress
-            }
         }
         .task {
             // Poll permissions every 5 seconds until all granted
