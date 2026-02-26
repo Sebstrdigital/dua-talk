@@ -23,16 +23,33 @@ final class UpdateChecker: ObservableObject {
                 guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                       let tag = json["tag_name"] as? String else { return }
 
-                let remote = tag.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
+                let remote = Self.normalizeTag(tag)
                 let local = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
 
-                if remote.compare(local, options: .numeric) == .orderedDescending {
+                if Self.isNewer(remote: remote, than: local) {
                     availableVersion = remote
                 }
             } catch {
                 // Silently ignore — offline or rate-limited
             }
         }
+    }
+
+    /// Strip leading 'v'/'V' from a GitHub tag name
+    static func normalizeTag(_ tag: String) -> String {
+        tag.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
+    }
+
+    /// Returns true if `remote` is a newer version than `local` using numeric comparison.
+    /// Malformed versions that can't be compared numerically return false.
+    static func isNewer(remote: String, than local: String) -> Bool {
+        // Ensure both strings contain only numeric version components (e.g. "0.4.1")
+        let validPattern = #"^\d+(\.\d+)*$"#
+        guard remote.range(of: validPattern, options: .regularExpression) != nil,
+              local.range(of: validPattern, options: .regularExpression) != nil else {
+            return false
+        }
+        return remote.compare(local, options: .numeric) == .orderedDescending
     }
 
     func openReleasesPage() {

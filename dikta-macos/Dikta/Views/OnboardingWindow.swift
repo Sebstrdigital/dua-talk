@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import AVFoundation
+import ServiceManagement
 
 /// Window controller for first-launch onboarding
 @MainActor
@@ -25,10 +26,10 @@ final class OnboardingWindowController {
         }
 
         let hostingView = NSHostingView(rootView: contentView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 500, height: 580)
+        hostingView.frame = NSRect(x: 0, y: 0, width: 500, height: 630)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 580),
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 630),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -58,6 +59,7 @@ final class OnboardingWindowController {
 extension Notification.Name {
     static let ttsInstallCompleted = Notification.Name("ttsInstallCompleted")
     static let appModelLoaded = Notification.Name("appModelLoaded")
+    static let appModelLoadingProgress = Notification.Name("appModelLoadingProgress")
 }
 
 enum TTSSetupStatus: Equatable {
@@ -254,6 +256,8 @@ struct OnboardingView: View {
     @State private var micStatus: PermissionStatus = .unknown
     @State private var accessibilityStatus: Bool = false
     @State private var isAppReady: Bool = false
+    @State private var modelLoadingProgress: Double = 0
+    @State private var launchAtLogin: Bool = false
 
     enum PermissionStatus {
         case unknown, granted, denied
@@ -309,7 +313,8 @@ struct OnboardingView: View {
                     subtitle: "Required for dictation"
                 ) { micStatusView }
 
-                // 2. Accessibility
+                // 2. Accessibility (also covers global hotkey monitoring via CGEventTap;
+                //    a separate Input Monitoring permission is NOT required for CGEventTap)
                 setupRow(
                     icon: "hand.raised.fill",
                     title: "Accessibility",
@@ -322,6 +327,13 @@ struct OnboardingView: View {
                     title: "Text-to-Speech",
                     subtitle: "Optional — read selected text aloud"
                 ) { ttsStatusView }
+
+                // 4. Launch at Login
+                setupRow(
+                    icon: "arrow.up.right.square",
+                    title: "Launch at Login",
+                    subtitle: "Start Dikta automatically when you log in"
+                ) { launchAtLoginToggle }
             }
             .padding(.horizontal, 32)
             .padding(.top, 16)
@@ -336,16 +348,24 @@ struct OnboardingView: View {
                 .padding(.horizontal, 32)
                 .padding(.bottom, 12)
 
-            // Get Started / Warming up
+            // Get Started / Loading model
             Button(action: onDismiss) {
                 if isAppReady {
                     Text("Start Dictating")
                         .frame(maxWidth: .infinity)
+                } else if modelLoadingProgress > 0 && modelLoadingProgress < 1 {
+                    HStack(spacing: 8) {
+                        ProgressView(value: modelLoadingProgress)
+                            .progressViewStyle(.linear)
+                            .frame(width: 80)
+                        Text("Loading model \(Int(modelLoadingProgress * 100))%")
+                    }
+                    .frame(maxWidth: .infinity)
                 } else {
                     HStack(spacing: 8) {
                         ProgressView()
                             .controlSize(.small)
-                        Text("Warming up...")
+                        Text("Loading model...")
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -356,14 +376,21 @@ struct OnboardingView: View {
             .padding(.horizontal, 32)
             .padding(.bottom, 24)
         }
-        .frame(width: 500, height: 580)
+        .frame(width: 500, height: 630)
         .onAppear {
             checkPermissions()
+            checkLaunchAtLogin()
             updateChecker.check()
             isAppReady = MenuBarViewModel.isModelLoaded
         }
         .onReceive(NotificationCenter.default.publisher(for: .appModelLoaded)) { _ in
             isAppReady = true
+            modelLoadingProgress = 1.0
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .appModelLoadingProgress)) { notification in
+            if let progress = notification.userInfo?["progress"] as? Double {
+                modelLoadingProgress = progress
+            }
         }
         .task {
             // Poll permissions every 5 seconds until all granted
@@ -477,6 +504,35 @@ struct OnboardingView: View {
                     .foregroundColor(.red)
                     .lineLimit(1)
             }
+        }
+    }
+
+    // MARK: - Launch at Login
+
+    @ViewBuilder
+    private var launchAtLoginToggle: some View {
+        Toggle("", isOn: $launchAtLogin)
+            .labelsHidden()
+            .onChange(of: launchAtLogin) { _, enabled in
+                setLaunchAtLogin(enabled)
+            }
+    }
+
+    private func checkLaunchAtLogin() {
+        launchAtLogin = SMAppService.mainApp.status == .enabled
+    }
+
+    private func setLaunchAtLogin(_ enabled: Bool) {
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+        } catch {
+            AppLogger.general.error("Failed to \(enabled ? "register" : "unregister") launch at login: \(error.localizedDescription)")
+            // Revert toggle if operation failed
+            launchAtLogin = SMAppService.mainApp.status == .enabled
         }
     }
 

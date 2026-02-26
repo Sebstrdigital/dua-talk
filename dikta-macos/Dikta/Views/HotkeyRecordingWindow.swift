@@ -78,6 +78,14 @@ struct HotkeyRecordingView: View {
 
     @State private var hasRecordedHotkey = false
 
+    /// Whether a collision alert is currently being shown
+    private var showCollisionAlert: Binding<Bool> {
+        Binding(
+            get: { viewModel.pendingCollision != nil },
+            set: { _ in }
+        )
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             Text(hasRecordedHotkey ? "Hotkey recorded" : "Press your desired key combination")
@@ -96,6 +104,13 @@ struct HotkeyRecordingView: View {
                     .padding(.vertical, 8)
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(8)
+            } else if viewModel.pendingCollision != nil {
+                Text("Conflict detected")
+                    .foregroundColor(.orange)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                    .background(Color.orange.opacity(0.15))
+                    .cornerRadius(8)
             } else {
                 Text(hotkey.displayString.isEmpty ? "Not set" : hotkey.displayString)
                     .font(.title)
@@ -112,7 +127,7 @@ struct HotkeyRecordingView: View {
                 }
                 .keyboardShortcut(.cancelAction)
 
-                if hasRecordedHotkey {
+                if hasRecordedHotkey && viewModel.pendingCollision == nil {
                     Button("Try Again") {
                         hasRecordedHotkey = false
                         viewModel.startRecordingHotkeyDirect(for: mode)
@@ -132,9 +147,32 @@ struct HotkeyRecordingView: View {
             viewModel.startRecordingHotkeyDirect(for: mode)
         }
         .onChange(of: viewModel.isRecordingHotkey) { _, isRecording in
-            if !isRecording && !hasRecordedHotkey {
+            if !isRecording && !hasRecordedHotkey && viewModel.pendingCollision == nil {
                 hasRecordedHotkey = true
             }
         }
+        .alert(
+            collisionAlertTitle,
+            isPresented: showCollisionAlert,
+            presenting: viewModel.pendingCollision
+        ) { collision in
+            Button("Override — Clear \(collision.conflictingMode.displayName)", role: .destructive) {
+                viewModel.resolveCollisionOverride()
+                hasRecordedHotkey = true
+            }
+            Button("Try Again", role: .cancel) {
+                hasRecordedHotkey = false
+                viewModel.resolveCollisionCancel()
+            }
+        } message: { collision in
+            Text("\(collision.newHotkey.displayString) is already used by \(collision.conflictingMode.displayName). Override it or choose a different hotkey.")
+        }
+    }
+
+    private var collisionAlertTitle: String {
+        if let collision = viewModel.pendingCollision {
+            return "Hotkey Conflict: \(collision.newHotkey.displayString)"
+        }
+        return "Hotkey Conflict"
     }
 }

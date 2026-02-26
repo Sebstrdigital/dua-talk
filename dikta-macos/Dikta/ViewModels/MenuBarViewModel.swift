@@ -37,6 +37,15 @@ final class MenuBarViewModel: ObservableObject {
     @Published var isRecordingHotkey = false
     @Published var recordingHotkeyFor: HotkeyMode?
 
+    // Pending collision — set when a recorded hotkey conflicts with another mode
+    @Published var pendingCollision: HotkeyCollision?
+
+    struct HotkeyCollision {
+        let newHotkey: HotkeyConfig
+        let forMode: HotkeyMode
+        let conflictingMode: HotkeyMode
+    }
+
     // Window controllers
     let hotkeyWindowController = HotkeyRecordingWindowController()
 
@@ -120,6 +129,19 @@ final class MenuBarViewModel: ObservableObject {
     func startRecording() {
         guard appState == .idle else { return }
 
+        // Set up silence auto-stop: when 10s of silence is detected, stop and process audio
+        audioRecorder.onSilenceAutoStop = { [weak self] samples in
+            guard let self, self.appState == .recording else { return }
+            AppLogger.audio.info("Silence auto-stop triggered after 10s of silence")
+            self.activeRecordingMode = nil
+            // Stop the engine and discard its result (we already have the samples)
+            _ = self.audioRecorder.stopRecording()
+            self.appState = .processing
+            Task {
+                await self.processAudio(samples)
+            }
+        }
+
         do {
             try audioRecorder.startRecording()
             appState = .recording
@@ -134,6 +156,7 @@ final class MenuBarViewModel: ObservableObject {
         guard appState == .recording else { return }
 
         activeRecordingMode = nil
+        audioRecorder.onSilenceAutoStop = nil
         let audioSamples = audioRecorder.stopRecording()
         appState = .processing
 
@@ -142,30 +165,50 @@ final class MenuBarViewModel: ObservableObject {
         }
     }
 
+    /// Timeout for transcription (seconds)
+    private static let transcriptionTimeout: UInt64 = 60
+
     private func processAudio(_ samples: [Float]) async {
         do {
-            // Transcribe with selected language
+            // Transcribe with a 60-second timeout to prevent hanging
             let language = configService.language
             let micDistance = configService.micDistance
-            let text = try await transcriber.transcribe(samples, language: language.whisperCode, micDistance: micDistance)
+
+            let text = try await withThrowingTaskGroup(of: String.self) { group in
+                group.addTask {
+                    try await self.transcriber.transcribe(samples, language: language.whisperCode, micDistance: micDistance)
+                }
+                group.addTask {
+                    try await Task.sleep(nanoseconds: MenuBarViewModel.transcriptionTimeout * 1_000_000_000)
+                    throw TranscriptionTimeoutError()
+                }
+                defer { group.cancelAll() }
+                return try await group.next()!
+            }
 
             // Check for silence/empty output from Whisper
             let silenceIndicators = ["[silence]", "[blank_audio]", "[no speech]", "(silence)", "[ silence ]"]
             let lowerText = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
             if lowerText.isEmpty || silenceIndicators.contains(where: { lowerText.contains($0) }) {
-                sendNotification(title: "No Speech", body: "No speech detected in recording", isRoutine: true)
+                sendNotification(
+                    title: "No Speech",
+                    body: "No speech detected. Try adjusting Mic Distance in Audio settings.",
+                    isRoutine: true
+                )
                 appState = .idle
                 return
             }
 
             await outputText(text)
 
+        } catch is TranscriptionTimeoutError {
+            sendNotification(title: "Transcription Timeout", body: "Processing took too long and was cancelled.")
+            appState = .idle
         } catch {
             sendNotification(title: "Error", body: error.localizedDescription)
+            appState = .idle
         }
-
-        appState = .idle
     }
 
     private func outputText(_ text: String) async {
@@ -258,6 +301,7 @@ final class MenuBarViewModel: ObservableObject {
     func cancelHotkeyRecording() {
         isRecordingHotkey = false
         recordingHotkeyFor = nil
+        pendingCollision = nil
         hotkeyManager.stopRecordingHotkey()
     }
 
@@ -392,19 +436,68 @@ extension MenuBarViewModel: HotkeyManagerDelegate {
             guard let mode = recordingHotkeyFor else { return }
 
             let hotkey = HotkeyConfig(modifiers: modifiers, key: key)
-            configService.setHotkey(hotkey, for: mode)
-            updateHotkeyConfig()
 
-            isRecordingHotkey = false
-            recordingHotkeyFor = nil
-            hotkeyManager.stopRecordingHotkey()
+            // Check for collision with any other mode
+            if let conflicting = findConflictingMode(for: hotkey, excluding: mode) {
+                // Pause recording state — let the view show the collision warning
+                isRecordingHotkey = false
+                hotkeyManager.stopRecordingHotkey()
+                pendingCollision = HotkeyCollision(newHotkey: hotkey, forMode: mode, conflictingMode: conflicting)
+                return
+            }
 
-            sendNotification(
-                title: "Hotkey Set",
-                body: "\(mode.displayName) hotkey set to \(hotkey.displayString)",
-                isRoutine: true
-            )
+            applyHotkey(hotkey, for: mode)
         }
+    }
+
+    /// Find another mode that uses the same hotkey, if any
+    private func findConflictingMode(for hotkey: HotkeyConfig, excluding mode: HotkeyMode) -> HotkeyMode? {
+        for other in HotkeyMode.allCases where other != mode {
+            let existing = configService.getHotkey(for: other)
+            if existing == hotkey {
+                return other
+            }
+        }
+        return nil
+    }
+
+    /// Save a hotkey for a mode, clear recording state, notify
+    private func applyHotkey(_ hotkey: HotkeyConfig, for mode: HotkeyMode) {
+        configService.setHotkey(hotkey, for: mode)
+        updateHotkeyConfig()
+
+        isRecordingHotkey = false
+        recordingHotkeyFor = nil
+        pendingCollision = nil
+        hotkeyManager.stopRecordingHotkey()
+
+        sendNotification(
+            title: "Hotkey Set",
+            body: "\(mode.displayName) hotkey set to \(hotkey.displayString)",
+            isRoutine: true
+        )
+    }
+
+    /// Resolve a hotkey collision by overriding: clear the conflicting mode's hotkey and apply
+    func resolveCollisionOverride() {
+        guard let collision = pendingCollision else { return }
+        // Clear the conflicting mode's hotkey
+        configService.setHotkey(HotkeyConfig(modifiers: [], key: nil), for: collision.conflictingMode)
+        applyHotkey(collision.newHotkey, for: collision.forMode)
+        sendNotification(
+            title: "Hotkey Cleared",
+            body: "\(collision.conflictingMode.displayName) hotkey was cleared due to conflict",
+            isRoutine: true
+        )
+    }
+
+    /// Cancel a pending collision — re-enter recording mode so user can try a different hotkey
+    func resolveCollisionCancel() {
+        guard let collision = pendingCollision else { return }
+        let mode = collision.forMode
+        pendingCollision = nil
+        // Re-start recording for the same mode
+        startRecordingHotkeyDirect(for: mode)
     }
 
     nonisolated func hotkeyManagerDidFailToStart(_ error: String) {
@@ -429,4 +522,11 @@ extension MenuBarViewModel: HotkeyManagerDelegate {
             }
         }
     }
+}
+
+// MARK: - Supporting Types
+
+/// Thrown when transcription exceeds the timeout limit
+private struct TranscriptionTimeoutError: Error, LocalizedError {
+    var errorDescription: String? { "Transcription timed out" }
 }

@@ -24,25 +24,38 @@ final class Transcriber: ObservableObject {
         loadingProgress = 0
         errorMessage = nil
 
+        postLoadingProgress(0.05)
+
         do {
             if let bundledPath = getBundledModelPath() {
                 AppLogger.transcription.info("Loading bundled model from \(bundledPath)")
-                whisperKit = try await WhisperKit(
+                let wk = try await WhisperKit(
                     modelFolder: bundledPath,
                     verbose: false,
-                    prewarm: true,
-                    load: true,
+                    prewarm: false,
+                    load: false,
                     download: false
                 )
+                // Wire up progress callbacks before loading
+                wk.modelStateCallback = { [weak self] _, newState in
+                    self?.handleModelState(newState)
+                }
+                try await wk.loadModels()
+                whisperKit = wk
             } else {
                 AppLogger.transcription.info("Downloading model: \(self.modelName)")
-                whisperKit = try await WhisperKit(
+                let wk = try await WhisperKit(
                     model: modelName,
                     verbose: false,
-                    prewarm: true,
-                    load: true,
+                    prewarm: false,
+                    load: false,
                     download: true
                 )
+                wk.modelStateCallback = { [weak self] _, newState in
+                    self?.handleModelState(newState)
+                }
+                try await wk.loadModels()
+                whisperKit = wk
             }
             isReady = true
             loadingProgress = 1.0
@@ -52,6 +65,39 @@ final class Transcriber: ObservableObject {
         }
 
         isLoading = false
+    }
+
+    /// Map WhisperKit ModelState transitions to a 0–1 progress value and post notifications
+    private func handleModelState(_ state: ModelState) {
+        let progress: Double
+        switch state {
+        case .downloading:
+            progress = 0.1
+        case .downloaded:
+            progress = 0.4
+        case .loading:
+            progress = 0.5
+        case .prewarming:
+            progress = 0.8
+        case .prewarmed:
+            progress = 0.9
+        case .loaded:
+            progress = 1.0
+        default:
+            return
+        }
+        Task { @MainActor in
+            self.loadingProgress = progress
+        }
+        postLoadingProgress(progress)
+    }
+
+    private func postLoadingProgress(_ progress: Double) {
+        NotificationCenter.default.post(
+            name: .appModelLoadingProgress,
+            object: nil,
+            userInfo: ["progress": progress]
+        )
     }
 
     /// Check for a bundled model in the app's Resources

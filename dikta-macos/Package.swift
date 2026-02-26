@@ -25,6 +25,11 @@ let package = Package(
             resources: [
                 .process("Resources/Assets.xcassets")
             ]
+        ),
+        .testTarget(
+            name: "DiktaTests",
+            dependencies: [],
+            path: "DiktaTests"
         )
     ]
 )
