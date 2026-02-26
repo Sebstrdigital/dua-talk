@@ -59,9 +59,21 @@ enum HotkeyMode: String, Codable, CaseIterable {
 }
 
 /// Configuration for a hotkey combination
-struct HotkeyConfig: Codable, Equatable {
+struct HotkeyConfig: Codable, Equatable, Hashable {
     var modifiers: [ModifierKey]
     var key: String?
+
+    /// Order-independent equality: [.shift, .ctrl] == [.ctrl, .shift]
+    static func == (lhs: HotkeyConfig, rhs: HotkeyConfig) -> Bool {
+        Set(lhs.modifiers) == Set(rhs.modifiers) && lhs.key == rhs.key
+    }
+
+    /// Hash consistent with order-independent Equatable: hash modifiers as a Set
+    /// so that configs with the same modifiers in different orders produce the same hash.
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(Set(modifiers))
+        hasher.combine(key)
+    }
 
     /// Format hotkey for display (e.g., "⇧⌃" or "⌘⇧A")
     var displayString: String {

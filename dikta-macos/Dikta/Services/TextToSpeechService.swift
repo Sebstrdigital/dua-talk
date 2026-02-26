@@ -111,7 +111,10 @@ final class TextToSpeechService: NSObject {
     }
 
     private func terminateServer() {
-        serverProcess?.terminate()
+        if let process = serverProcess, process.isRunning {
+            process.terminate()
+            process.waitUntilExit()
+        }
         serverProcess = nil
     }
 
@@ -287,6 +290,16 @@ final class TextToSpeechService: NSObject {
     }
 
     deinit {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSApplication.willTerminateNotification,
+            object: nil
+        )
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .ttsInstallCompleted,
+            object: nil
+        )
         terminateServer()
     }
 }

@@ -18,7 +18,9 @@ final class TextSelectionService {
         guard appResult == .success, let focusedApp else {
             return nil
         }
-        // AXUIElement is a CoreFoundation type — cast always succeeds when non-nil
+        // Verify CF type before casting — guards against Accessibility API returning
+        // an unexpected type on malformed element trees, returning nil instead of crashing.
+        guard CFGetTypeID(focusedApp as CFTypeRef) == AXUIElementGetTypeID() else { return nil }
         let appElement = focusedApp as! AXUIElement
 
         var focusedElement: AnyObject?
@@ -26,6 +28,7 @@ final class TextSelectionService {
         guard elementResult == .success, let focusedElement else {
             return nil
         }
+        guard CFGetTypeID(focusedElement as CFTypeRef) == AXUIElementGetTypeID() else { return nil }
         let element = focusedElement as! AXUIElement
 
         var selectedText: AnyObject?
