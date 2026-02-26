@@ -29,6 +29,7 @@
 		100000000000000000000018 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000018 /* Logger.swift */; };
 		100000000000000000000019 /* TextToSpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000019 /* TextToSpeechService.swift */; };
 		100000000000000000000020 /* TextSelectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000020 /* TextSelectionService.swift */; };
+		100000000000000000000027 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000027 /* UpdateChecker.swift */; };
 
 		/* ViewModels */
 		100000000000000000000021 /* MenuBarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000021 /* MenuBarViewModel.swift */; };
@@ -75,6 +76,7 @@
 		200000000000000000000018 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		200000000000000000000019 /* TextToSpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextToSpeechService.swift; sourceTree = "<group>"; };
 		200000000000000000000020 /* TextSelectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSelectionService.swift; sourceTree = "<group>"; };
+		200000000000000000000027 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 
 		/* ViewModels */
 		200000000000000000000021 /* MenuBarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarViewModel.swift; sourceTree = "<group>"; };
@@ -162,6 +164,7 @@
 				200000000000000000000018 /* Logger.swift */,
 				200000000000000000000019 /* TextToSpeechService.swift */,
 				200000000000000000000020 /* TextSelectionService.swift */,
+				200000000000000000000027 /* UpdateChecker.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -306,6 +309,7 @@
 				100000000000000000000018 /* Logger.swift in Sources */,
 				100000000000000000000019 /* TextToSpeechService.swift in Sources */,
 				100000000000000000000020 /* TextSelectionService.swift in Sources */,
+				100000000000000000000027 /* UpdateChecker.swift in Sources */,
 				100000000000000000000032 /* HotkeyRecordingWindow.swift in Sources */,
 				100000000000000000000033 /* OnboardingWindow.swift in Sources */,
 				100000000000000000000034 /* CustomPromptWindow.swift in Sources */,

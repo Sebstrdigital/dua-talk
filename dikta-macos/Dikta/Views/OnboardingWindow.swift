@@ -249,6 +249,7 @@ struct OnboardingView: View {
     let onDismiss: () -> Void
 
     @StateObject private var ttsSetup = TTSSetupManager()
+    @StateObject private var updateChecker = UpdateChecker()
     @State private var micStatus: PermissionStatus = .unknown
     @State private var accessibilityStatus: Bool = false
 
@@ -277,6 +278,14 @@ struct OnboardingView: View {
                     Text("v\(version)")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                }
+
+                if let newVersion = updateChecker.availableVersion {
+                    Button(action: { updateChecker.openReleasesPage() }) {
+                        Label("v\(newVersion) available — download", systemImage: "arrow.down.circle.fill")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.link)
                 }
             }
             .padding(.top, 28)
@@ -339,6 +348,7 @@ struct OnboardingView: View {
         .frame(width: 500, height: 580)
         .onAppear {
             checkPermissions()
+            updateChecker.check()
         }
         .task {
             // Poll permissions every 5 seconds until all granted
