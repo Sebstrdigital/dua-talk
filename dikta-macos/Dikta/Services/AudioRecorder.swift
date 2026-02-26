@@ -36,7 +36,7 @@ final class AudioRecorder {
     }
 
     /// Start recording audio
-    func startRecording() throws {
+    func startRecording() async throws {
         guard !isRecording else { return }
 
         var engine = AVAudioEngine()
@@ -46,7 +46,8 @@ final class AudioRecorder {
         if inputFormat.sampleRate == 0 {
             AppLogger.audio.info("Input format has 0 sample rate, waiting for audio route to settle...")
             engine.stop()
-            Thread.sleep(forTimeInterval: 0.3)
+            // Use Task.sleep so we yield the thread rather than blocking it
+            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
 
             engine = AVAudioEngine()
             inputFormat = engine.inputNode.outputFormat(forBus: 0)
@@ -146,11 +147,15 @@ final class AudioRecorder {
                 silenceStartDate = now
             } else if let start = silenceStartDate,
                       now.timeIntervalSince(start) >= silenceAutoStopThreshold {
-                // Silence threshold exceeded — trigger auto-stop on main thread
+                // Silence threshold exceeded — trim trailing silence and trigger auto-stop
+                let silenceSamples = Int(now.timeIntervalSince(start) * Self.sampleRate)
+                let trimmedEnd = max(0, captured.count - silenceSamples)
+                let trimmed = trimmedEnd > 0 ? Array(captured[..<trimmedEnd]) : captured
+
                 silenceStartDate = nil
                 let callback = onSilenceAutoStop
                 DispatchQueue.main.async {
-                    callback?(captured)
+                    callback?(trimmed)
                 }
             }
         } else {

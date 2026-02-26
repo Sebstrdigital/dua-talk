@@ -2,6 +2,7 @@ import Foundation
 import AppKit
 import UserNotifications
 import Combine
+import ServiceManagement
 
 /// State for the menu bar app
 enum AppState {
@@ -142,12 +143,14 @@ final class MenuBarViewModel: ObservableObject {
             }
         }
 
-        do {
-            try audioRecorder.startRecording()
-            appState = .recording
-            audioFeedback.beepOn()
-        } catch {
-            sendNotification(title: "Error", body: "Failed to start recording: \(error.localizedDescription)")
+        Task {
+            do {
+                try await audioRecorder.startRecording()
+                appState = .recording
+                audioFeedback.beepOn()
+            } catch {
+                sendNotification(title: "Error", body: "Failed to start recording: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -201,9 +204,17 @@ final class MenuBarViewModel: ObservableObject {
             }
 
             await outputText(text)
+            appState = .idle
 
         } catch is TranscriptionTimeoutError {
             sendNotification(title: "Transcription Timeout", body: "Processing took too long and was cancelled.")
+            appState = .idle
+        } catch is TranscriberError {
+            sendNotification(
+                title: "No Speech",
+                body: "No speech detected. Try adjusting Mic Distance in Audio settings.",
+                isRoutine: true
+            )
             appState = .idle
         } catch {
             sendNotification(title: "Error", body: error.localizedDescription)
@@ -228,6 +239,25 @@ final class MenuBarViewModel: ObservableObject {
     /// Paste a history item
     func pasteHistoryItem(_ item: HistoryItem) {
         clipboardManager.pasteText(item.text)
+    }
+
+    // MARK: - Launch at Login
+
+    @Published var launchAtLogin: Bool = SMAppService.mainApp.status == .enabled
+
+    func toggleLaunchAtLogin() {
+        let newValue = !launchAtLogin
+        do {
+            if newValue {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+            launchAtLogin = newValue
+        } catch {
+            AppLogger.general.error("Failed to \(newValue ? "register" : "unregister") launch at login: \(error.localizedDescription)")
+            launchAtLogin = SMAppService.mainApp.status == .enabled
+        }
     }
 
     // MARK: - Mute Sounds
