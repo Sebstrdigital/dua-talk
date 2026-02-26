@@ -9,6 +9,16 @@ final class AudioRecorder {
     private var isRecording = false
     private var configObserver: NSObjectProtocol?
 
+    // Silence auto-stop
+    /// Called on the main thread when 10 continuous seconds of silence triggers auto-stop.
+    /// Receives the captured audio samples for processing.
+    var onSilenceAutoStop: (([Float]) -> Void)?
+
+    private var silenceStartDate: Date?
+    private let silenceAutoStopThreshold: TimeInterval = 10.0
+    /// RMS energy below this level is considered silence
+    private let silenceRMSThreshold: Float = 0.005
+
     /// Target sample rate for Whisper (16kHz)
     static let sampleRate: Double = 16000
 
@@ -65,7 +75,8 @@ final class AudioRecorder {
             throw AudioRecorderError.converterCreationFailed
         }
 
-        // Clear buffer
+        // Clear buffer and silence state
+        silenceStartDate = nil
         bufferLock.lock()
         audioBuffer.removeAll()
         bufferLock.unlock()
@@ -114,13 +125,46 @@ final class AudioRecorder {
 
             bufferLock.lock()
             audioBuffer.append(contentsOf: samples)
+            let captured = audioBuffer
             bufferLock.unlock()
+
+            // Silence detection: compute RMS of this buffer chunk
+            checkSilenceAutoStop(samples: samples, captured: captured)
+        }
+    }
+
+    private func checkSilenceAutoStop(samples: [Float], captured: [Float]) {
+        guard !samples.isEmpty else { return }
+
+        // RMS energy of this chunk
+        let sumOfSquares = samples.reduce(0.0) { $0 + $1 * $1 }
+        let rms = (sumOfSquares / Float(samples.count)).squareRoot()
+
+        let now = Date()
+        if rms < silenceRMSThreshold {
+            if silenceStartDate == nil {
+                silenceStartDate = now
+            } else if let start = silenceStartDate,
+                      now.timeIntervalSince(start) >= silenceAutoStopThreshold {
+                // Silence threshold exceeded — trigger auto-stop on main thread
+                silenceStartDate = nil
+                let callback = onSilenceAutoStop
+                DispatchQueue.main.async {
+                    callback?(captured)
+                }
+            }
+        } else {
+            // Speech detected — reset silence timer
+            silenceStartDate = nil
         }
     }
 
     /// Stop recording and return the audio buffer
     func stopRecording() -> [Float] {
         guard isRecording else { return [] }
+
+        // Reset silence detection state
+        silenceStartDate = nil
 
         if let observer = configObserver {
             NotificationCenter.default.removeObserver(observer)

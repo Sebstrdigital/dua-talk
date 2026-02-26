@@ -129,6 +129,19 @@ final class MenuBarViewModel: ObservableObject {
     func startRecording() {
         guard appState == .idle else { return }
 
+        // Set up silence auto-stop: when 10s of silence is detected, stop and process audio
+        audioRecorder.onSilenceAutoStop = { [weak self] samples in
+            guard let self, self.appState == .recording else { return }
+            AppLogger.audio.info("Silence auto-stop triggered after 10s of silence")
+            self.activeRecordingMode = nil
+            // Stop the engine and discard its result (we already have the samples)
+            _ = self.audioRecorder.stopRecording()
+            self.appState = .processing
+            Task {
+                await self.processAudio(samples)
+            }
+        }
+
         do {
             try audioRecorder.startRecording()
             appState = .recording
@@ -143,6 +156,7 @@ final class MenuBarViewModel: ObservableObject {
         guard appState == .recording else { return }
 
         activeRecordingMode = nil
+        audioRecorder.onSilenceAutoStop = nil
         let audioSamples = audioRecorder.stopRecording()
         appState = .processing
 
@@ -151,30 +165,50 @@ final class MenuBarViewModel: ObservableObject {
         }
     }
 
+    /// Timeout for transcription (seconds)
+    private static let transcriptionTimeout: UInt64 = 60
+
     private func processAudio(_ samples: [Float]) async {
         do {
-            // Transcribe with selected language
+            // Transcribe with a 60-second timeout to prevent hanging
             let language = configService.language
             let micDistance = configService.micDistance
-            let text = try await transcriber.transcribe(samples, language: language.whisperCode, micDistance: micDistance)
+
+            let text = try await withThrowingTaskGroup(of: String.self) { group in
+                group.addTask {
+                    try await self.transcriber.transcribe(samples, language: language.whisperCode, micDistance: micDistance)
+                }
+                group.addTask {
+                    try await Task.sleep(nanoseconds: MenuBarViewModel.transcriptionTimeout * 1_000_000_000)
+                    throw TranscriptionTimeoutError()
+                }
+                defer { group.cancelAll() }
+                return try await group.next()!
+            }
 
             // Check for silence/empty output from Whisper
             let silenceIndicators = ["[silence]", "[blank_audio]", "[no speech]", "(silence)", "[ silence ]"]
             let lowerText = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
             if lowerText.isEmpty || silenceIndicators.contains(where: { lowerText.contains($0) }) {
-                sendNotification(title: "No Speech", body: "No speech detected in recording", isRoutine: true)
+                sendNotification(
+                    title: "No Speech",
+                    body: "No speech detected. Try adjusting Mic Distance in Audio settings.",
+                    isRoutine: true
+                )
                 appState = .idle
                 return
             }
 
             await outputText(text)
 
+        } catch is TranscriptionTimeoutError {
+            sendNotification(title: "Transcription Timeout", body: "Processing took too long and was cancelled.")
+            appState = .idle
         } catch {
             sendNotification(title: "Error", body: error.localizedDescription)
+            appState = .idle
         }
-
-        appState = .idle
     }
 
     private func outputText(_ text: String) async {
@@ -488,4 +522,11 @@ extension MenuBarViewModel: HotkeyManagerDelegate {
             }
         }
     }
+}
+
+// MARK: - Supporting Types
+
+/// Thrown when transcription exceeds the timeout limit
+private struct TranscriptionTimeoutError: Error, LocalizedError {
+    var errorDescription: String? { "Transcription timed out" }
 }
