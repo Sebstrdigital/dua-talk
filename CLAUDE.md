@@ -13,11 +13,16 @@
 
 ## Project Overview
 
-Dikta is a minimal, fully offline dictation app for macOS (v0.3). Press a hotkey, speak, and your words are pasted. Menu bar app, no cloud services.
+Dikta is a minimal, fully offline dictation app for macOS (v0.4). Press a hotkey, speak, and your words are pasted. Menu bar app, no cloud services.
 
 - **dikta-macos/** — Primary implementation (Swift/SwiftUI/WhisperKit)
 - **dikta-windows/** — Windows port (.NET 8/C#/WPF)
 - **dikta-python/** — Legacy, not actively developed
+
+## Conventions
+
+- **Release titles**: `Dikta vX.Y — Short Subtitle` (e.g. "Dikta v0.4 — Stability & Polish")
+- **No debug builds for testing** — only release builds (`build-release.sh`)
 
 ## Build & Run
 
