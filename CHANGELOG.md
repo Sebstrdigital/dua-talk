@@ -2,6 +2,18 @@
 
 All notable changes to Dikta will be documented in this file.
 
+## [0.3] - 2026-02-26
+
+### Features
+- Mic Distance setting (Close / Normal / Far) — configurable speech detection sensitivity to fix "No Speech" with AirPods and headsets
+- Language hotkey (Cmd+Ctrl) — cycle between languages without opening the menu
+- Indonesian language support
+- Menu restructured: Hotkeys, Audio, Write in, Advanced sections
+- "Setup..." renamed to "About..."
+
+### Fixes
+- Speech detection thresholds now dynamic instead of hardcoded (was causing false "No Speech" at normal distance)
+
 ## [0.2] - 2026-02-20
 
 ### Features

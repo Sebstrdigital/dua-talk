@@ -54,6 +54,19 @@ enum OutputMode: String, Codable, CaseIterable {
                 - För mejl: lägg en tom rad efter hälsningen, mellan stycken, och före avslutningen. Sätt namnet på en egen rad efter avslutningen
                 - Skriv bara den städade texten, inget annat
                 """
+            case .indonesian:
+                return """
+                Anda adalah pemformat dikte. Rapikan teks lisan di bawah ini menjadi teks tertulis yang terstruktur dengan baik.
+
+                Aturan:
+                - Hapus kata-kata pengisi dan keraguan yang tidak menambah makna
+                - Hapus gagap dan kata-kata yang diulang
+                - Perbaiki tanda baca, tata bahasa, dan struktur kalimat
+                - Pertahankan istilah teknis dan konten bermakna persis seperti yang diucapkan
+                - Pisahkan menjadi paragraf ketika topik berubah, waktu atau tanggal berubah, atau pembicara mengatakan "paragraf baru" atau "baris baru"
+                - Untuk email: letakkan baris kosong setelah salam, di antara paragraf, dan sebelum penutup. Letakkan nama di baris sendiri setelah penutup
+                - Tulis hanya teks yang sudah dirapikan, tidak ada yang lain
+                """
             }
         }
     }

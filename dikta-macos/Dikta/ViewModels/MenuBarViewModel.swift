@@ -141,7 +141,8 @@ final class MenuBarViewModel: ObservableObject {
         do {
             // Transcribe with selected language
             let language = configService.language
-            let text = try await transcriber.transcribe(samples, language: language.whisperCode)
+            let micDistance = configService.micDistance
+            let text = try await transcriber.transcribe(samples, language: language.whisperCode, micDistance: micDistance)
 
             // Check for silence/empty output from Whisper
             let silenceIndicators = ["[silence]", "[blank_audio]", "[no speech]", "(silence)", "[ silence ]"]
@@ -198,7 +199,19 @@ final class MenuBarViewModel: ObservableObject {
 
     func setLanguage(_ language: Language) {
         configService.language = language
-        sendNotification(title: "Language Changed", body: "Now using \(language.displayName)", isRoutine: true)
+        sendNotification(title: "Write in", body: language.displayName, isRoutine: true)
+    }
+
+    func cycleLanguage() {
+        let next = configService.language.next
+        setLanguage(next)
+    }
+
+    // MARK: - Mic Distance
+
+    func setMicDistance(_ distance: MicDistance) {
+        configService.micDistance = distance
+        sendNotification(title: "Mic Distance", body: "Set to \(distance.displayName)", isRoutine: true)
     }
 
     // MARK: - Whisper Model
@@ -253,6 +266,7 @@ final class MenuBarViewModel: ObservableObject {
             pushToTalk: configService.getHotkey(for: .pushToTalk)
         )
         hotkeyManager.updateTtsConfig(configService.ttsHotkey)
+        hotkeyManager.updateLanguageConfig(configService.languageToggleHotkey)
     }
 
     // MARK: - Text-to-Speech
@@ -391,6 +405,12 @@ extension MenuBarViewModel: HotkeyManagerDelegate {
     nonisolated func hotkeyManagerDidFailToStart(_ error: String) {
         Task { @MainActor in
             sendNotification(title: "Hotkey Error", body: error)
+        }
+    }
+
+    nonisolated func languageHotkeyPressed() {
+        Task { @MainActor in
+            cycleLanguage()
         }
     }
 

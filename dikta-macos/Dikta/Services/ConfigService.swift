@@ -53,6 +53,7 @@ final class ConfigService: ObservableObject {
         case .toggle: return config.hotkeys.toggle
         case .pushToTalk: return config.hotkeys.pushToTalk
         case .textToSpeech: return config.hotkeys.textToSpeech
+        case .languageToggle: return config.hotkeys.languageToggle
         }
     }
 
@@ -64,6 +65,8 @@ final class ConfigService: ObservableObject {
             config.hotkeys.pushToTalk = hotkey
         case .textToSpeech:
             config.hotkeys.textToSpeech = hotkey
+        case .languageToggle:
+            config.hotkeys.languageToggle = hotkey
         }
         objectWillChange.send()
         save()
@@ -71,6 +74,10 @@ final class ConfigService: ObservableObject {
 
     var ttsHotkey: HotkeyConfig {
         config.hotkeys.textToSpeech
+    }
+
+    var languageToggleHotkey: HotkeyConfig {
+        config.hotkeys.languageToggle
     }
 
     // MARK: - Output Mode
@@ -115,6 +122,17 @@ final class ConfigService: ObservableObject {
         get { config.customPrompt }
         set {
             config.customPrompt = newValue
+            objectWillChange.send()
+            save()
+        }
+    }
+
+    // MARK: - Mic Distance
+
+    var micDistance: MicDistance {
+        get { config.micDistance }
+        set {
+            config.micDistance = newValue
             objectWillChange.send()
             save()
         }

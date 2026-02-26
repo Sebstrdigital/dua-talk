@@ -20,10 +20,10 @@ final class HotkeyRecordingWindowController {
         }
 
         let hostingView = NSHostingView(rootView: contentView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 320, height: 140)
+        hostingView.frame = NSRect(x: 0, y: 0, width: 320, height: 160)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 140),
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 160),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -79,9 +79,13 @@ struct HotkeyRecordingView: View {
     @State private var hasRecordedHotkey = false
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Text(hasRecordedHotkey ? "Hotkey recorded" : "Press your desired key combination")
                 .font(.headline)
+
+            Text(mode.description)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
 
             let hotkey = viewModel.configService.getHotkey(for: mode)
 
@@ -123,7 +127,7 @@ struct HotkeyRecordingView: View {
             }
         }
         .padding(20)
-        .frame(width: 320, height: 140)
+        .frame(width: 320, height: 160)
         .onAppear {
             viewModel.startRecordingHotkeyDirect(for: mode)
         }

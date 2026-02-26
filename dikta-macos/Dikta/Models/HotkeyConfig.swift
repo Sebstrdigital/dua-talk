@@ -33,16 +33,27 @@ enum ModifierKey: String, Codable, CaseIterable {
 }
 
 /// Hotkey mode (toggle vs push-to-talk vs text-to-speech)
-enum HotkeyMode: String, Codable {
+enum HotkeyMode: String, Codable, CaseIterable {
     case toggle = "toggle"
     case pushToTalk = "push_to_talk"
     case textToSpeech = "text_to_speech"
+    case languageToggle = "language_toggle"
 
     var displayName: String {
         switch self {
-        case .toggle: return "Toggle Mode"
-        case .pushToTalk: return "Push-to-Talk Mode"
-        case .textToSpeech: return "Text-to-Speech"
+        case .toggle: return "Record"
+        case .pushToTalk: return "Push-to-Talk"
+        case .textToSpeech: return "Read Aloud"
+        case .languageToggle: return "Switch Language"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .toggle: return "Press to start, press again to stop"
+        case .pushToTalk: return "Hold to record, release to stop"
+        case .textToSpeech: return "Read selected text aloud"
+        case .languageToggle: return "Cycle through languages"
         }
     }
 }
@@ -81,4 +92,7 @@ struct HotkeyConfig: Codable, Equatable {
 
     /// Default text-to-speech hotkey: Cmd+Alt
     static let defaultTextToSpeech = HotkeyConfig(modifiers: [.cmd, .alt], key: nil)
+
+    /// Default language toggle hotkey: Cmd+Ctrl
+    static let defaultLanguageToggle = HotkeyConfig(modifiers: [.cmd, .ctrl], key: nil)
 }

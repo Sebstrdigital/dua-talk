@@ -15,6 +15,7 @@
 		100000000000000000000005 /* Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000005 /* Language.swift */; };
 		100000000000000000000006 /* WhisperModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000006 /* WhisperModel.swift */; };
 		100000000000000000000007 /* AppPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000007 /* AppPaths.swift */; };
+		100000000000000000000008 /* MicDistance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000008 /* MicDistance.swift */; };
 
 		/* Services */
 		100000000000000000000011 /* ConfigService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000011 /* ConfigService.swift */; };
@@ -60,6 +61,7 @@
 		200000000000000000000005 /* Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Language.swift; sourceTree = "<group>"; };
 		200000000000000000000006 /* WhisperModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperModel.swift; sourceTree = "<group>"; };
 		200000000000000000000007 /* AppPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPaths.swift; sourceTree = "<group>"; };
+		200000000000000000000008 /* MicDistance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicDistance.swift; sourceTree = "<group>"; };
 
 		/* Services */
 		200000000000000000000011 /* ConfigService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigService.swift; sourceTree = "<group>"; };
@@ -141,6 +143,7 @@
 				200000000000000000000005 /* Language.swift */,
 				200000000000000000000006 /* WhisperModel.swift */,
 				200000000000000000000007 /* AppPaths.swift */,
+				200000000000000000000008 /* MicDistance.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -299,6 +302,7 @@
 				100000000000000000000041 /* DiktaApp.swift in Sources */,
 				100000000000000000000005 /* Language.swift in Sources */,
 				100000000000000000000006 /* WhisperModel.swift in Sources */,
+				100000000000000000000008 /* MicDistance.swift in Sources */,
 				100000000000000000000018 /* Logger.swift in Sources */,
 				100000000000000000000019 /* TextToSpeechService.swift in Sources */,
 				100000000000000000000020 /* TextSelectionService.swift in Sources */,
@@ -450,7 +454,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.duatalk.app;
 				PRODUCT_NAME = Dikta;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -479,7 +483,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.duatalk.app;
 				PRODUCT_NAME = Dikta;
 				SWIFT_EMIT_LOC_STRINGS = YES;

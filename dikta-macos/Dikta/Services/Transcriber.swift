@@ -66,7 +66,7 @@ final class Transcriber: ObservableObject {
     ///   - audioSamples: Float32 audio samples at 16kHz
     ///   - language: Language code for transcription
     /// - Returns: Transcribed text
-    func transcribe(_ audioSamples: [Float], language: String? = nil) async throws -> String {
+    func transcribe(_ audioSamples: [Float], language: String? = nil, micDistance: MicDistance = .normal) async throws -> String {
         guard let whisperKit = whisperKit else {
             throw TranscriberError.modelNotLoaded
         }
@@ -79,8 +79,8 @@ final class Transcriber: ObservableObject {
             language: language,
             temperatureFallbackCount: 3,         // Retry with higher temp if failed
             compressionRatioThreshold: 2.4,      // Detect repetitive hallucinations
-            logProbThreshold: -1.0,              // Filter low-confidence output
-            noSpeechThreshold: 0.6               // Detect silence/no speech
+            logProbThreshold: micDistance.logProbThreshold,
+            noSpeechThreshold: micDistance.noSpeechThreshold
         )
 
         AppLogger.transcription.debug("Using language: \(language ?? "auto"), samples: \(audioSamples.count)")

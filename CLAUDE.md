@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Dikta is a minimal, fully offline dictation app for macOS (v0.2). It transcribes speech to clipboard using a global hotkey, running as a menu bar app. No cloud services required.
+Dikta is a minimal, fully offline dictation app for macOS (v0.3). It transcribes speech to clipboard using a global hotkey, running as a menu bar app. No cloud services required.
 
 The primary implementation is **dikta-macos/** (native Swift/SwiftUI). A Windows port lives in **dikta-windows/** (.NET 8/C#/WPF). A legacy Python implementation exists in **dikta-python/**.
 
@@ -45,7 +45,8 @@ Hotkey → Recording → WhisperKit STT → Auto-paste + History
   - `AppConfig.swift` — Full config structure, persisted as JSON
   - `HotkeyConfig.swift` — Modifier keys (shift, ctrl, cmd, alt, fn), hotkey matching logic
   - `WhisperModel.swift` — Available models: small, medium
-  - `Language.swift` — Supported languages: English, Swedish
+  - `MicDistance.swift` — Close/Normal/Far presets for speech detection sensitivity
+  - `Language.swift` — Supported languages: English, Swedish, Indonesian
 - **Services/**
   - `HotkeyManager.swift` — CGEventTap-based global hotkey detection (flagsChanged + keyDown/keyUp)
   - `ConfigService.swift` — Singleton config manager, persists to `~/Library/Application Support/Dikta/config.json`
@@ -67,19 +68,20 @@ Uses `CGEvent.tapCreate` listening for `keyDown`, `keyUp`, and `flagsChanged` ev
 
 ### Config
 
-Persisted at `~/Library/Application Support/Dikta/config.json`. Key fields: `hotkeys` (toggle, push_to_talk, text_to_speech), `whisper_model`, `language`, `mute_sounds`, `mute_notifications`.
+Persisted at `~/Library/Application Support/Dikta/config.json`. Key fields: `hotkeys` (toggle, push_to_talk, text_to_speech, language_toggle), `whisper_model`, `language`, `mic_distance`, `mute_sounds`, `mute_notifications`.
 
 ## Hotkey Modes
 
 - **Toggle** (default): Press hotkey to start, press again to stop
 - **Push-to-Talk**: Hold hotkey to record, release to stop
 - **Read Aloud**: Press hotkey to read selected text via TTS
+- **Language Toggle**: Press hotkey to cycle between languages
 
-Default hotkeys: Toggle = Shift+Ctrl, PTT = Cmd+Shift, TTS = Cmd+Alt. All customizable via Settings menu.
+Default hotkeys: Toggle = Shift+Ctrl, PTT = Cmd+Shift, TTS = Cmd+Alt, Language = Cmd+Ctrl. All customizable via Hotkeys menu.
 
 ## Text-to-Speech
 
-Kokoro TTS is set up from the onboarding window (Setup... in menu bar). Creates a Python venv at `~/Library/Application Support/Dikta/venv` and installs kokoro + dependencies.
+Kokoro TTS is set up from the onboarding window (About in menu bar). Creates a Python venv at `~/Library/Application Support/Dikta/venv` and installs kokoro + dependencies.
 
 ## Menu Structure
 
@@ -87,17 +89,23 @@ Kokoro TTS is set up from the onboarding window (Setup... in menu bar). Creates 
 Dikta
 ├── Stop Recording / Stop Speaking / Processing...
 ├── History >
-├── Settings >
-│   ├── Toggle Mode / Push-to-Talk Mode
-│   ├── Set Toggle Hotkey... / Set Push-to-Talk Hotkey...
-│   └── Set Read Aloud Hotkey...
-├── Advanced >
+├── Hotkeys >
+│   ├── Set Record Hotkey...
+│   ├── Set Push-to-Talk Hotkey...
+│   ├── Set Read Aloud Hotkey...
+│   └── Set Language Toggle Hotkey...
+├── Audio >
 │   ├── Mute Sounds
 │   ├── Mute Notifications
-│   ├── Language: English / Svenska
+│   └── Mic Distance: Close / Normal / Far
+├── Write in: (language) >
+│   ├── English
+│   ├── Svenska
+│   └── Bahasa Indonesia
+├── Advanced >
 │   ├── Whisper Model: Small / Medium
 │   └── Voice: (Kokoro voices)
-├── Setup...
+├── About
 └── Quit
 ```
 

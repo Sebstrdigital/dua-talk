@@ -8,6 +8,7 @@ protocol HotkeyManagerDelegate: AnyObject {
     func hotkeyReleased(mode: HotkeyMode)
     func hotkeyRecorded(modifiers: [ModifierKey], key: String?)
     func ttsHotkeyPressed()
+    func languageHotkeyPressed()
     func hotkeyManagerDidFailToStart(_ error: String)
 }
 
@@ -29,6 +30,10 @@ final class HotkeyManager {
     private var ttsHotkeyConfig: HotkeyConfig = .defaultTextToSpeech
     private var isTtsHotkeyActive = false
 
+    // Language toggle hotkey (trigger-based)
+    private var languageHotkeyConfig: HotkeyConfig = .defaultLanguageToggle
+    private var isLanguageHotkeyActive = false
+
     // Hotkey recording state
     private var isRecordingHotkey = false
     private var recordedModifiers: Set<ModifierKey> = []
@@ -45,6 +50,11 @@ final class HotkeyManager {
     /// Update the TTS hotkey configuration
     func updateTtsConfig(_ config: HotkeyConfig) {
         self.ttsHotkeyConfig = config
+    }
+
+    /// Update the language toggle hotkey configuration
+    func updateLanguageConfig(_ config: HotkeyConfig) {
+        self.languageHotkeyConfig = config
     }
 
     /// Start listening for global hotkeys
@@ -178,6 +188,19 @@ final class HotkeyManager {
     }
 
     private func handleModifierEvent(flags: CGEventFlags) {
+        // Check language toggle hotkey (modifier-only, trigger-based)
+        if languageHotkeyConfig.key == nil {
+            let langMatches = languageHotkeyConfig.matchesModifiers(flags)
+            if langMatches && !isLanguageHotkeyActive {
+                isLanguageHotkeyActive = true
+                DispatchQueue.main.async { [weak self] in
+                    self?.delegate?.languageHotkeyPressed()
+                }
+            } else if !langMatches && isLanguageHotkeyActive {
+                isLanguageHotkeyActive = false
+            }
+        }
+
         // Check TTS hotkey (modifier-only, trigger-based)
         if ttsHotkeyConfig.key == nil {
             let ttsMatches = ttsHotkeyConfig.matchesModifiers(flags)
@@ -224,6 +247,17 @@ final class HotkeyManager {
     private func handleKeyEvent(type: CGEventType, event: CGEvent, flags: CGEventFlags) {
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
         guard let pressedKey = keyCodeToString(UInt16(keyCode)) else { return }
+
+        // Check language toggle hotkey (key-based, trigger-based)
+        if let langKey = languageHotkeyConfig.key,
+           pressedKey.lowercased() == langKey.lowercased(),
+           languageHotkeyConfig.matchesModifiers(flags),
+           type == .keyDown {
+            DispatchQueue.main.async { [weak self] in
+                self?.delegate?.languageHotkeyPressed()
+            }
+            return
+        }
 
         // Check TTS hotkey (key-based, trigger-based)
         if let ttsKey = ttsHotkeyConfig.key,
