@@ -70,7 +70,7 @@ APP_EXPORT="${EXPORT_PATH}/${APP_NAME}.app"
 
 # Step 2b: Bundle Whisper small model into the app
 WHISPER_MODEL_NAME="openai_whisper-small"
-WHISPER_MODEL_SRC="${HOME}/Documents/huggingface/models/argmaxinc/whisperkit-coreml/${WHISPER_MODEL_NAME}"
+WHISPER_MODEL_SRC="${HOME}/work/artifacts/huggingface/models/argmaxinc/whisperkit-coreml/${WHISPER_MODEL_NAME}"
 WHISPER_MODEL_DEST="${APP_EXPORT}/Contents/Resources/WhisperModels/${WHISPER_MODEL_NAME}"
 
 if [ ! -d "${WHISPER_MODEL_SRC}" ]; then
@@ -78,7 +78,7 @@ if [ ! -d "${WHISPER_MODEL_SRC}" ]; then
     echo ""
     echo "Download it first by running the app in dev mode (swift build && .build/debug/Dikta)"
     echo "or manually download from HuggingFace:"
-    echo "  huggingface-cli download argmaxinc/whisperkit-coreml openai_whisper-small --local-dir ~/Documents/huggingface/models/argmaxinc/whisperkit-coreml"
+    echo "  huggingface-cli download argmaxinc/whisperkit-coreml openai_whisper-small --local-dir ~/work/artifacts/huggingface/models/argmaxinc/whisperkit-coreml"
     exit 1
 fi
 

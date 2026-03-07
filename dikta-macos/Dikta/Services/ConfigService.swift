@@ -130,12 +130,12 @@ final class ConfigService: ObservableObject {
         }
     }
 
-    // MARK: - Mic Distance
+    // MARK: - Mic Sensitivity
 
-    var micDistance: MicDistance {
-        get { config.micDistance }
+    var micSensitivity: MicSensitivity {
+        get { config.micSensitivity }
         set {
-            config.micDistance = newValue
+            config.micSensitivity = newValue
             objectWillChange.send()
             save()
         }

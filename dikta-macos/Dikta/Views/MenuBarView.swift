@@ -114,14 +114,14 @@ struct AudioMenu: View {
 
             Divider()
 
-            Menu("Mic Distance: \(viewModel.configService.micDistance.displayName)") {
-                ForEach(MicDistance.allCases, id: \.self) { distance in
+            Menu("Mic Sensitivity: \(viewModel.configService.micSensitivity.displayName)") {
+                ForEach(MicSensitivity.allCases, id: \.self) { sensitivity in
                     Button(action: {
-                        viewModel.setMicDistance(distance)
+                        viewModel.setMicSensitivity(sensitivity)
                     }) {
                         HStack {
-                            Text(distance.displayName)
-                            if viewModel.configService.micDistance == distance {
+                            Text(sensitivity.displayName)
+                            if viewModel.configService.micSensitivity == sensitivity {
                                 Spacer()
                                 Image(systemName: "checkmark")
                             }

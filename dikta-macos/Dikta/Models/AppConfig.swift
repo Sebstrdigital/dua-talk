@@ -10,7 +10,7 @@ struct AppConfig: Codable {
     var llmModel: String
     var language: Language
     var customPrompt: String
-    var micDistance: MicDistance
+    var micSensitivity: MicSensitivity
     var muteSounds: Bool
     var muteNotifications: Bool
 
@@ -52,7 +52,7 @@ struct AppConfig: Codable {
         case llmModel = "llm_model"
         case language
         case customPrompt = "custom_prompt"
-        case micDistance = "mic_distance"
+        case micSensitivity = "mic_sensitivity"
         case muteSounds = "mute_sounds"
         case muteNotifications = "mute_notifications"
     }
@@ -73,7 +73,7 @@ struct AppConfig: Codable {
         llmModel: "gemma3",
         language: .english,
         customPrompt: defaultCustomPrompt,
-        micDistance: .normal,
+        micSensitivity: .normal,
         muteSounds: false,
         muteNotifications: false
     )
@@ -82,7 +82,7 @@ struct AppConfig: Codable {
     static let historyLimit = 5
 
     /// Memberwise initializer
-    init(version: Int, hotkeys: HotkeyConfigs, outputMode: OutputMode, history: [HistoryItem], whisperModel: String, llmModel: String, language: Language, customPrompt: String = defaultCustomPrompt, micDistance: MicDistance = .normal, muteSounds: Bool = false, muteNotifications: Bool = false) {
+    init(version: Int, hotkeys: HotkeyConfigs, outputMode: OutputMode, history: [HistoryItem], whisperModel: String, llmModel: String, language: Language, customPrompt: String = defaultCustomPrompt, micSensitivity: MicSensitivity = .normal, muteSounds: Bool = false, muteNotifications: Bool = false) {
         self.version = version
         self.hotkeys = hotkeys
         self.outputMode = outputMode
@@ -91,7 +91,7 @@ struct AppConfig: Codable {
         self.llmModel = llmModel
         self.language = language
         self.customPrompt = customPrompt
-        self.micDistance = micDistance
+        self.micSensitivity = micSensitivity
         self.muteSounds = muteSounds
         self.muteNotifications = muteNotifications
     }
@@ -116,7 +116,15 @@ struct AppConfig: Codable {
         llmModel = try container.decode(String.self, forKey: .llmModel)
         language = try container.decodeIfPresent(Language.self, forKey: .language) ?? .english
         customPrompt = try container.decodeIfPresent(String.self, forKey: .customPrompt) ?? Self.defaultCustomPrompt
-        micDistance = try container.decodeIfPresent(MicDistance.self, forKey: .micDistance) ?? .normal
+        // Migrate old "mic_distance" values: "close" → "normal", "far" → "headset"
+        if let raw = try container.decodeIfPresent(String.self, forKey: .micSensitivity) {
+            switch raw {
+            case "headset", "far": micSensitivity = .headset
+            default: micSensitivity = .normal
+            }
+        } else {
+            micSensitivity = .normal
+        }
         muteSounds = try container.decodeIfPresent(Bool.self, forKey: .muteSounds) ?? false
         muteNotifications = try container.decodeIfPresent(Bool.self, forKey: .muteNotifications) ?? false
     }

@@ -145,7 +145,7 @@ final class MenuBarViewModel: ObservableObject {
 
         Task {
             do {
-                try await audioRecorder.startRecording(micDistance: configService.micDistance)
+                try await audioRecorder.startRecording(micSensitivity: configService.micSensitivity)
                 appState = .recording
                 audioFeedback.beepOn()
             } catch {
@@ -175,7 +175,7 @@ final class MenuBarViewModel: ObservableObject {
         do {
             // Transcribe with a 60-second timeout to prevent hanging
             let language = configService.language
-            let micDistance = configService.micDistance
+            let micSensitivity = configService.micSensitivity
 
             // Diagnostic: log memory before transcription
             if let memBefore = memoryFootprintMB() {
@@ -184,7 +184,7 @@ final class MenuBarViewModel: ObservableObject {
 
             let text = try await withThrowingTaskGroup(of: String.self) { group in
                 group.addTask {
-                    try await self.transcriber.transcribe(samples, language: language.whisperCode, micDistance: micDistance)
+                    try await self.transcriber.transcribe(samples, language: language.whisperCode, micSensitivity: micSensitivity)
                 }
                 group.addTask {
                     try await Task.sleep(nanoseconds: MenuBarViewModel.transcriptionTimeout * 1_000_000_000)
@@ -206,7 +206,7 @@ final class MenuBarViewModel: ObservableObject {
             if lowerText.isEmpty || silenceIndicators.contains(where: { lowerText.contains($0) }) {
                 sendNotification(
                     title: "No Speech",
-                    body: "No speech detected. Try adjusting Mic Distance in Audio settings."
+                    body: "No speech detected. Try adjusting Mic Sensitivity in Audio settings."
                 )
                 appState = .idle
                 return
@@ -221,7 +221,7 @@ final class MenuBarViewModel: ObservableObject {
         } catch is TranscriberError {
             sendNotification(
                 title: "No Speech",
-                body: "No speech detected. Try adjusting Mic Distance in Audio settings."
+                body: "No speech detected. Try adjusting Mic Sensitivity in Audio settings."
             )
             appState = .idle
         } catch {
@@ -293,11 +293,11 @@ final class MenuBarViewModel: ObservableObject {
         setLanguage(next)
     }
 
-    // MARK: - Mic Distance
+    // MARK: - Mic Sensitivity
 
-    func setMicDistance(_ distance: MicDistance) {
-        configService.micDistance = distance
-        sendNotification(title: "Mic Distance", body: "Set to \(distance.displayName)", isRoutine: true)
+    func setMicSensitivity(_ sensitivity: MicSensitivity) {
+        configService.micSensitivity = sensitivity
+        sendNotification(title: "Mic Sensitivity", body: "Set to \(sensitivity.displayName)", isRoutine: true)
     }
 
     // MARK: - Whisper Model

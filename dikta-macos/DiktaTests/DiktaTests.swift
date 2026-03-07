@@ -43,7 +43,7 @@ struct HotkeyConfig: Codable, Equatable {
 }
 
 enum Language: String, Codable { case english = "en", swedish = "sv", indonesian = "id" }
-enum MicDistance: String, Codable { case close, normal, far }
+enum MicSensitivity: String, Codable { case normal, headset }
 enum OutputMode: String, Codable {
     case raw, general, custom
     init(from decoder: Decoder) throws {
@@ -70,7 +70,7 @@ struct AppConfig: Codable {
     var llmModel: String
     var language: Language
     var customPrompt: String
-    var micDistance: MicDistance
+    var micSensitivity: MicSensitivity
     var muteSounds: Bool
     var muteNotifications: Bool
 
@@ -108,7 +108,7 @@ struct AppConfig: Codable {
         case version, hotkeys, outputMode = "output_mode", history,
              whisperModel = "whisper_model", llmModel = "llm_model",
              language, customPrompt = "custom_prompt",
-             micDistance = "mic_distance", muteSounds = "mute_sounds",
+             micSensitivity = "mic_sensitivity", muteSounds = "mute_sounds",
              muteNotifications = "mute_notifications"
     }
 
@@ -124,7 +124,14 @@ struct AppConfig: Codable {
         llmModel = try c.decode(String.self, forKey: .llmModel)
         language = try c.decodeIfPresent(Language.self, forKey: .language) ?? .english
         customPrompt = try c.decodeIfPresent(String.self, forKey: .customPrompt) ?? ""
-        micDistance = try c.decodeIfPresent(MicDistance.self, forKey: .micDistance) ?? .normal
+        if let raw = try c.decodeIfPresent(String.self, forKey: .micSensitivity) {
+            switch raw {
+            case "headset", "far": micSensitivity = .headset
+            default: micSensitivity = .normal
+            }
+        } else {
+            micSensitivity = .normal
+        }
         muteSounds = try c.decodeIfPresent(Bool.self, forKey: .muteSounds) ?? false
         muteNotifications = try c.decodeIfPresent(Bool.self, forKey: .muteNotifications) ?? false
     }
@@ -236,7 +243,7 @@ final class AppConfigDecodingTests: XCTestCase {
             "llm_model": "gemma3",
             "language": "en",
             "custom_prompt": "Test prompt",
-            "mic_distance": "normal",
+            "mic_sensitivity": "normal",
             "mute_sounds": false,
             "mute_notifications": false
         }
@@ -245,7 +252,7 @@ final class AppConfigDecodingTests: XCTestCase {
         XCTAssertEqual(config.version, 3)
         XCTAssertEqual(config.whisperModel, "small")
         XCTAssertEqual(config.language, .english)
-        XCTAssertEqual(config.micDistance, .normal)
+        XCTAssertEqual(config.micSensitivity, .normal)
     }
 
     func test_decode_missingOptionalFields_usesDefaults() throws {
@@ -264,7 +271,7 @@ final class AppConfigDecodingTests: XCTestCase {
         """.data(using: .utf8)!
         let config = try JSONDecoder().decode(AppConfig.self, from: json)
         XCTAssertEqual(config.language, .english)
-        XCTAssertEqual(config.micDistance, .normal)
+        XCTAssertEqual(config.micSensitivity, .normal)
         XCTAssertFalse(config.muteSounds)
         XCTAssertFalse(config.muteNotifications)
         XCTAssertGreaterThanOrEqual(config.version, 3)

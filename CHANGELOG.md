@@ -2,10 +2,26 @@
 
 All notable changes to Dikta will be documented in this file.
 
-## [Unreleased]
+## [0.5] - 2026-03-07
 
 ### Reliability
-- 2026-03-07: Mitigated takt agent Bash permission issue — wildcard `Bash(*)` added to project settings
+- Long-form transcription (30–120s) now works reliably — relaxed compressionRatioThreshold from 2.4 to 3.0
+- Bluetooth headset retry with backoff (300/500/800ms) for HFP profile switching
+- AVAudioConverter recreated on audio route changes mid-recording instead of silently dropping frames
+- AVAudioConverter lifecycle fix — stored as instance property, explicitly released on stop to prevent memory leak
+- Thread safety — audioConverter access synchronized with bufferLock across tap closure, config change handler, and stopRecording
+- Segment-level diagnostic logging (text, avgLogprob, compressionRatio, noSpeechProb)
+- Memory footprint logging before/after each transcription
+
+### Features
+- Mic Sensitivity replaces Mic Distance — simplified to Normal / Headset (removed Close preset)
+- Whisper control tokens (`<|startoftranscript|>`, `<|en|>`, timestamps, etc.) stripped from output
+- Smart segment filtering — valid text segments kept even when mixed with silence/empty segments
+- Error notifications (No Speech, Transcription Timeout) always shown even when notifications are muted
+
+### Fixes
+- AVAudioConverter errors now logged instead of silently discarded
+- Build script updated — Whisper model path moved out of iCloud-synced Documents folder
 
 ## [0.4] - 2026-02-26
 

@@ -17,7 +17,7 @@ Download the latest DMG from [Releases](https://github.com/Sebstrdigital/dikta/r
 - **Text-to-Speech** — select text and have it read aloud via Kokoro TTS (optional, installed separately)
 - **History** — access your last 5 dictations from the menu bar
 - **Multi-language** — English, Swedish, and Indonesian
-- **Mic Distance** — tune speech detection sensitivity for Close, Normal, or Far/Headset scenarios
+- **Mic Sensitivity** — tune speech detection sensitivity for Normal or Headset use
 - **Launch at Login** — optionally start Dikta automatically when you log in
 
 ## Permissions
@@ -56,7 +56,7 @@ Dikta
 ├── Audio >
 │   ├── Mute Sounds
 │   ├── Mute Notifications
-│   └── Mic Distance: Close / Normal / Far/Headset
+│   └── Mic Sensitivity: Normal / Headset
 ├── Write in: English >
 │   ├── English
 │   ├── Svenska
@@ -69,15 +69,14 @@ Dikta
 └── Quit
 ```
 
-## Mic Distance
+## Mic Sensitivity
 
-If you get "No Speech" errors, adjust **Mic Distance** under Audio:
+If you get "No Speech" errors with AirPods or Bluetooth headsets, switch to **Headset** under Audio > Mic Sensitivity:
 
 | Setting | Use when | Thresholds |
 |---------|----------|------------|
-| **Close** | Laptop mic at 15–30cm | Strict (Whisper defaults) |
-| **Normal** | Desk mic at ~50cm | Balanced |
-| **Far / Headset** | AirPods, Bluetooth headsets | Permissive |
+| **Normal** | Built-in mic, desk mic | Balanced |
+| **Headset** | AirPods, Bluetooth headsets | Permissive |
 
 ## Text-to-Speech
 
@@ -110,7 +109,7 @@ This archives, signs, bundles the Whisper model, notarizes with Apple, and produ
 
 **Hotkey not working** — Check that the app is listed in System Settings > Privacy & Security > Accessibility. Restart after granting.
 
-**"No Speech" notifications** — Try adjusting **Mic Distance** in the Audio menu. For AirPods, use "Far / Headset". Also ensure the correct input device is selected in System Settings > Sound > Input before recording.
+**"No Speech" notifications** — Try switching to **Headset** in the Audio > Mic Sensitivity menu. Also ensure the correct input device is selected in System Settings > Sound > Input before recording.
 
 **Text-to-speech not working** — Open the About window and click "Set Up" next to Text-to-Speech. Requires Python 3 (`/usr/bin/python3` or Homebrew).
 
@@ -128,7 +127,7 @@ Key source files:
 
 - `Models/AppConfig.swift` — Full config structure, persisted as JSON at `~/Library/Application Support/Dikta/config.json`
 - `Models/HotkeyConfig.swift` — Modifier keys, hotkey matching, collision detection
-- `Models/MicDistance.swift` — Speech detection sensitivity presets (noSpeechThreshold, logProbThreshold)
+- `Models/MicSensitivity.swift` — Speech detection sensitivity presets (noSpeechThreshold, logProbThreshold, silenceRMSThreshold)
 - `Services/HotkeyManager.swift` — CGEventTap-based global hotkey detection
 - `Services/ConfigService.swift` — Singleton config manager with atomic writes
 - `Services/Transcriber.swift` — WhisperKit integration with timeout and progress callbacks

@@ -17,7 +17,7 @@ final class AudioRecorder {
 
     private var silenceStartDate: Date?
     private let silenceAutoStopThreshold: TimeInterval = 10.0
-    /// RMS energy below this level is considered silence (set per-recording based on MicDistance)
+    /// RMS energy below this level is considered silence (set per-recording based on MicSensitivity)
     private var silenceRMSThreshold: Float = 0.005
 
     /// Target sample rate for Whisper (16kHz)
@@ -44,11 +44,11 @@ final class AudioRecorder {
     private static let retryDelaysNs: [UInt64] = [300_000_000, 500_000_000, 800_000_000]
 
     /// Start recording audio
-    /// - Parameter micDistance: The current mic distance preset, used to set the silence RMS threshold.
-    func startRecording(micDistance: MicDistance = .normal) async throws {
+    /// - Parameter micSensitivity: The current mic sensitivity preset, used to set the silence RMS threshold.
+    func startRecording(micSensitivity: MicSensitivity = .normal) async throws {
         guard !isRecording else { return }
 
-        silenceRMSThreshold = micDistance.silenceRMSThreshold
+        silenceRMSThreshold = micSensitivity.silenceRMSThreshold
 
         var engine = AVAudioEngine()
         var inputFormat = engine.inputNode.outputFormat(forBus: 0)

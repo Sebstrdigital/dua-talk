@@ -35,3 +35,7 @@ open Dikta.xcodeproj        # Development
 ## Detailed Docs
 
 - **[Architecture](docs/architecture.md)** — Key files, hotkey system, config, menu structure, permissions
+
+## jCodeMunch
+indexed_commit: c3185a3
+indexed_at: 2026-03-07
