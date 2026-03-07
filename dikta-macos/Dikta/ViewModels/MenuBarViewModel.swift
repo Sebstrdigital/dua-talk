@@ -196,8 +196,7 @@ final class MenuBarViewModel: ObservableObject {
             if lowerText.isEmpty || silenceIndicators.contains(where: { lowerText.contains($0) }) {
                 sendNotification(
                     title: "No Speech",
-                    body: "No speech detected. Try adjusting Mic Distance in Audio settings.",
-                    isRoutine: true
+                    body: "No speech detected. Try adjusting Mic Distance in Audio settings."
                 )
                 appState = .idle
                 return
@@ -212,8 +211,7 @@ final class MenuBarViewModel: ObservableObject {
         } catch is TranscriberError {
             sendNotification(
                 title: "No Speech",
-                body: "No speech detected. Try adjusting Mic Distance in Audio settings.",
-                isRoutine: true
+                body: "No speech detected. Try adjusting Mic Distance in Audio settings."
             )
             appState = .idle
         } catch {
