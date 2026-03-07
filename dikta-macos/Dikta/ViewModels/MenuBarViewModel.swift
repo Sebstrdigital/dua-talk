@@ -145,7 +145,7 @@ final class MenuBarViewModel: ObservableObject {
 
         Task {
             do {
-                try await audioRecorder.startRecording()
+                try await audioRecorder.startRecording(micDistance: configService.micDistance)
                 appState = .recording
                 audioFeedback.beepOn()
             } catch {
