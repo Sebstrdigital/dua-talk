@@ -104,6 +104,11 @@ final class Transcriber: ObservableObject {
 
         AppLogger.transcription.info("Valid segments: \(validSegments.count) of \(allSegments.count)")
 
+        // Diagnostic file log: one compact line with per-segment scores
+        let noSpeechProbs = allSegments.map { String(format: "%.2f", $0.noSpeechProb) }.joined(separator: ",")
+        let logProbs = allSegments.map { String(format: "%.1f", $0.avgLogprob) }.joined(separator: ",")
+        DiagnosticLogger.shared.log("WHISPER | segs=\(allSegments.count) valid=\(validSegments.count) | noSpeech=[\(noSpeechProbs)] | logProb=[\(logProbs)]")
+
         let text = validSegments.map { segment in
             // Strip Whisper control tokens (e.g. <|startoftranscript|>, <|en|>, <|0.00|>, <|endoftext|>)
             segment.text.replacingOccurrences(of: "<\\|[^|]+\\|>", with: "", options: .regularExpression)

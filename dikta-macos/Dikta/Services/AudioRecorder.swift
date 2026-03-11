@@ -10,6 +10,12 @@ final class AudioRecorder {
     private var isRecording = false
     private var configObserver: NSObjectProtocol?
 
+    // Diagnostic counters (read after stopRecording)
+    private(set) var inputSampleRate: Double = 0
+    private(set) var routeChangeCount: Int = 0
+    private(set) var converterErrorCount: Int = 0
+    private(set) var emptyBufferCount: Int = 0
+
     // Silence auto-stop
     /// Called on the main thread when 10 continuous seconds of silence triggers auto-stop.
     /// Receives the captured audio samples for processing.
@@ -50,6 +56,11 @@ final class AudioRecorder {
 
         silenceRMSThreshold = micSensitivity.silenceRMSThreshold
 
+        // Reset diagnostic counters
+        routeChangeCount = 0
+        converterErrorCount = 0
+        emptyBufferCount = 0
+
         var engine = AVAudioEngine()
         var inputFormat = engine.inputNode.outputFormat(forBus: 0)
 
@@ -78,6 +89,7 @@ final class AudioRecorder {
         }
 
         self.audioEngine = engine
+        self.inputSampleRate = inputFormat.sampleRate
         try startRecordingWithEngine(engine, inputFormat: inputFormat)
     }
 
@@ -141,6 +153,8 @@ final class AudioRecorder {
             self.bufferLock.lock()
             self.audioConverter = newConverter
             self.bufferLock.unlock()
+            self.routeChangeCount += 1
+            DiagnosticLogger.shared.log("ROUTE_CHANGE | newRate=\(newInputFormat.sampleRate)Hz | changeCount=\(self.routeChangeCount)")
             AppLogger.audio.info("AVAudioConverter recreated with new input format: \(newInputFormat.sampleRate)Hz")
         }
     }
@@ -164,7 +178,13 @@ final class AudioRecorder {
         converter.convert(to: outputBuffer, error: &error, withInputFrom: inputBlock)
 
         if let error {
+            converterErrorCount += 1
             AppLogger.audio.error("AVAudioConverter.convert() failed: \(error.localizedDescription)")
+            return
+        }
+
+        if outputBuffer.frameLength == 0 {
+            emptyBufferCount += 1
             return
         }
 

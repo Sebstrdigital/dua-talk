@@ -33,6 +33,7 @@ final class MenuBarViewModel: ObservableObject {
 
     // Track which mode initiated a recording (nil when not recording)
     private var activeRecordingMode: HotkeyMode? = nil
+    private var recordingStartDate: Date?
 
     // Hotkey recording state
     @Published var isRecordingHotkey = false
@@ -146,10 +147,13 @@ final class MenuBarViewModel: ObservableObject {
         Task {
             do {
                 try await audioRecorder.startRecording(micSensitivity: configService.micSensitivity)
+                recordingStartDate = Date()
                 appState = .recording
                 audioFeedback.beepOn()
+                DiagnosticLogger.shared.log("START | mic=\(configService.micSensitivity.displayName) | rate=\(audioRecorder.inputSampleRate)Hz")
             } catch {
                 sendNotification(title: "Error", body: "Failed to start recording: \(error.localizedDescription)")
+                DiagnosticLogger.shared.log("START_FAILED | \(error.localizedDescription)")
             }
         }
     }
@@ -172,6 +176,16 @@ final class MenuBarViewModel: ObservableObject {
     private static let transcriptionTimeout: UInt64 = 60
 
     private func processAudio(_ samples: [Float]) async {
+        // Diagnostic: log audio buffer stats
+        let duration = recordingStartDate.map { Date().timeIntervalSince($0) } ?? 0
+        let bufferRMS: Float = samples.isEmpty ? 0 :
+            (samples.reduce(0.0) { $0 + $1 * $1 } / Float(samples.count)).squareRoot()
+        DiagnosticLogger.shared.log(
+            "AUDIO | dur=\(String(format: "%.1f", duration))s | samples=\(samples.count) | rms=\(String(format: "%.6f", bufferRMS))"
+            + " | routeChanges=\(audioRecorder.routeChangeCount) | converterErrors=\(audioRecorder.converterErrorCount) | emptyBuffers=\(audioRecorder.emptyBufferCount)"
+        )
+        recordingStartDate = nil
+
         do {
             // Transcribe with a 60-second timeout to prevent hanging
             let language = configService.language
@@ -204,6 +218,7 @@ final class MenuBarViewModel: ObservableObject {
             let lowerText = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
             if lowerText.isEmpty || silenceIndicators.contains(where: { lowerText.contains($0) }) {
+                DiagnosticLogger.shared.log("RESULT | no_speech (silence indicator in text)")
                 sendNotification(
                     title: "No Speech",
                     body: "No speech detected. Try adjusting Mic Sensitivity in Audio settings."
@@ -212,19 +227,23 @@ final class MenuBarViewModel: ObservableObject {
                 return
             }
 
+            DiagnosticLogger.shared.log("RESULT | pasted | chars=\(text.count)")
             await outputText(text)
             appState = .idle
 
         } catch is TranscriptionTimeoutError {
+            DiagnosticLogger.shared.log("RESULT | timeout")
             sendNotification(title: "Transcription Timeout", body: "Processing took too long and was cancelled.")
             appState = .idle
         } catch is TranscriberError {
+            DiagnosticLogger.shared.log("RESULT | no_speech (TranscriberError)")
             sendNotification(
                 title: "No Speech",
                 body: "No speech detected. Try adjusting Mic Sensitivity in Audio settings."
             )
             appState = .idle
         } catch {
+            DiagnosticLogger.shared.log("RESULT | error | \(error.localizedDescription)")
             sendNotification(title: "Error", body: error.localizedDescription)
             appState = .idle
         }
