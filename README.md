@@ -19,6 +19,7 @@ Download the latest DMG from [Releases](https://github.com/Sebstrdigital/dikta/r
 - **Multi-language** — English, Swedish, and Indonesian
 - **Mic Sensitivity** — tune speech detection sensitivity for Normal or Headset use
 - **Launch at Login** — optionally start Dikta automatically when you log in
+- **Auto-Update** — checks for updates via Sparkle; configure in the About screen
 
 ## Permissions
 
@@ -63,7 +64,9 @@ Dikta
 │   └── Indonesia
 ├── Advanced >
 │   ├── Start at Login
+│   ├── Check for Updates...
 │   ├── Whisper Model: Small / Medium
+│   ├── Diagnostic Logging
 │   └── Voice: (Kokoro TTS voices)
 ├── About
 └── Quit

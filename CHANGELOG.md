@@ -2,14 +2,37 @@
 
 All notable changes to Dikta will be documented in this file.
 
-## [0.7] - upcoming
+## [1.0.2] - 2026-03-14
+
+### Features
+- Diagnostic logging feature flag — off by default, toggle in Advanced menu
+- Auto-update toggle moved to About screen for better discoverability
+
+### Fixes
+- Sparkle XPC entitlements preserved during code signing — fixes "Update Error" when installing updates
+- Appcast uses marketing version for version comparison — fixes "up to date" false positive
+- Build script handles re-releases of same version tag
+
+## [1.0.1] - 2026-03-14
+
+### Fixes
+- SparkleController init passes delegate via constructor (fixes build error with Sparkle 2.x)
+- EdDSA public key set in Info.plist (replaces placeholder)
+
+## [1.0] - 2026-03-14
 
 ### Features
 - Auto-update via Sparkle 2.x — app checks for updates silently on launch; standard Sparkle dialog shown when new version is available
 - "Check for Updates..." in Advanced menu — manual update check on demand
-- "Automatically Check for Updates" toggle in Advanced menu — opt out of launch-time checks (persisted across restarts)
+- "Automatically Check for Updates" toggle — opt out of launch-time checks
 - Update Available badge — persistent "Update Available (vX.Y)" indicator at top of menu bar menu; disappears after install or skip
 - Release pipeline automation — `build-release.sh` now generates `appcast.xml` with EdDSA signature, creates GitHub Release, and deploys to GitHub Pages in one command
+
+## [0.6] - 2026-03-13
+
+### Fixes
+- Strip [BLANK_AUDIO] tokens before no_speech check — fixes false positive "No Speech" errors (11 confirmed false positives over 48h)
+- Diagnostic file logger added for investigating transcription issues
 
 ## [0.5] - 2026-03-07
 
