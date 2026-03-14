@@ -188,22 +188,8 @@ struct AdvancedMenu: View {
 
             Divider()
 
-            // US-003: Manual check for updates
             Button("Check for Updates...") {
                 sparkle.checkForUpdates()
-            }
-
-            // US-003: Opt-out toggle for automatic update checks
-            Button(action: {
-                sparkle.automaticallyChecksForUpdates.toggle()
-            }) {
-                HStack {
-                    Text("Automatically Check for Updates")
-                    if sparkle.automaticallyChecksForUpdates {
-                        Spacer()
-                        Image(systemName: "checkmark")
-                    }
-                }
             }
 
             Divider()

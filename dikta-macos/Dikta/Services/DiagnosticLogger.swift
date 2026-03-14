@@ -5,7 +5,14 @@ import Foundation
 final class DiagnosticLogger {
     static let shared = DiagnosticLogger()
 
+    private var _isEnabled = false
     private let queue = DispatchQueue(label: "com.dikta.diagnostic-logger")
+
+    /// Thread-safe enabled flag, set from ConfigService on launch and when toggled
+    var isEnabled: Bool {
+        get { queue.sync { _isEnabled } }
+        set { queue.sync { _isEnabled = newValue } }
+    }
     private let logURL: URL
     private let maxFileSize: UInt64 = 5 * 1024 * 1024 // 5 MB
 
@@ -24,6 +31,7 @@ final class DiagnosticLogger {
 
     func log(_ message: String) {
         queue.async { [self] in
+            guard self._isEnabled else { return }
             let timestamp = dateFormatter.string(from: Date())
             let line = "[\(timestamp)] \(message)\n"
 

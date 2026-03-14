@@ -8,8 +8,11 @@ import ServiceManagement
 final class OnboardingWindowController {
     static let shared = OnboardingWindowController()
 
+    /// Set once from DiktaApp so the About window can access Sparkle
+    var sparkleController: SparkleController?
+
     private var window: NSWindow?
-    private var hostingView: NSHostingView<OnboardingView>?
+    private var hostingView: NSHostingView<AnyView>?
 
     func show() {
         // If already showing, just bring to front
@@ -25,11 +28,18 @@ final class OnboardingWindowController {
             self?.close()
         }
 
-        let hostingView = NSHostingView(rootView: contentView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 500, height: 630)
+        let wrappedView: AnyView
+        if let sparkle = sparkleController {
+            wrappedView = AnyView(contentView.environmentObject(sparkle))
+        } else {
+            wrappedView = AnyView(contentView)
+        }
+
+        let hostingView = NSHostingView(rootView: wrappedView)
+        hostingView.frame = NSRect(x: 0, y: 0, width: 500, height: 660)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 630),
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 660),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -250,12 +260,13 @@ final class TTSSetupManager: ObservableObject {
 struct OnboardingView: View {
     let onDismiss: () -> Void
 
+    @EnvironmentObject var sparkle: SparkleController
     @StateObject private var ttsSetup = TTSSetupManager()
-    @StateObject private var updateChecker = UpdateChecker()
     @State private var micStatus: PermissionStatus = .unknown
     @State private var accessibilityStatus: Bool = false
     @State private var isAppReady: Bool = false
     @State private var launchAtLogin: Bool = false
+    @State private var autoCheckForUpdates: Bool = true
 
     enum PermissionStatus {
         case unknown, granted, denied
@@ -284,9 +295,9 @@ struct OnboardingView: View {
                         .foregroundColor(.secondary)
                 }
 
-                if let newVersion = updateChecker.availableVersion {
-                    Button(action: { updateChecker.openReleasesPage() }) {
-                        Label("v\(newVersion) available — download", systemImage: "arrow.down.circle.fill")
+                if sparkle.updateAvailable, let newVersion = sparkle.pendingVersion {
+                    Button(action: { sparkle.checkForUpdates() }) {
+                        Label("v\(newVersion) available — install", systemImage: "arrow.down.circle.fill")
                             .font(.caption)
                     }
                     .buttonStyle(.link)
@@ -332,6 +343,13 @@ struct OnboardingView: View {
                     title: "Launch at Login",
                     subtitle: "Start Dikta automatically when you log in"
                 ) { launchAtLoginToggle }
+
+                // 5. Auto-Update
+                setupRow(
+                    icon: "arrow.triangle.2.circlepath",
+                    title: "Automatic Updates",
+                    subtitle: "Check for new versions on launch"
+                ) { autoUpdateToggle }
             }
             .padding(.horizontal, 32)
             .padding(.top, 16)
@@ -366,11 +384,11 @@ struct OnboardingView: View {
             .padding(.horizontal, 32)
             .padding(.bottom, 24)
         }
-        .frame(width: 500, height: 630)
+        .frame(width: 500, height: 660)
         .onAppear {
             checkPermissions()
             checkLaunchAtLogin()
-            updateChecker.check()
+            autoCheckForUpdates = sparkle.automaticallyChecksForUpdates
             isAppReady = MenuBarViewModel.isModelLoaded
         }
         .onReceive(NotificationCenter.default.publisher(for: .appModelLoaded)) { _ in
@@ -499,6 +517,17 @@ struct OnboardingView: View {
             .labelsHidden()
             .onChange(of: launchAtLogin) { _, enabled in
                 setLaunchAtLogin(enabled)
+            }
+    }
+
+    // MARK: - Auto-Update
+
+    @ViewBuilder
+    private var autoUpdateToggle: some View {
+        Toggle("", isOn: $autoCheckForUpdates)
+            .labelsHidden()
+            .onChange(of: autoCheckForUpdates) { _, enabled in
+                sparkle.automaticallyChecksForUpdates = enabled
             }
     }
 

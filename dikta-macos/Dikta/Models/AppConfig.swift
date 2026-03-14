@@ -13,6 +13,7 @@ struct AppConfig: Codable {
     var micSensitivity: MicSensitivity
     var muteSounds: Bool
     var muteNotifications: Bool
+    var diagnosticLogging: Bool
 
     struct HotkeyConfigs: Codable {
         var toggle: HotkeyConfig
@@ -55,6 +56,7 @@ struct AppConfig: Codable {
         case micSensitivity = "mic_sensitivity"
         case muteSounds = "mute_sounds"
         case muteNotifications = "mute_notifications"
+        case diagnosticLogging = "diagnostic_logging"
     }
 
     static let defaultCustomPrompt = "Clean up this dictation. Fix grammar, punctuation, and remove filler words. Output only the cleaned text."
@@ -75,14 +77,15 @@ struct AppConfig: Codable {
         customPrompt: defaultCustomPrompt,
         micSensitivity: .normal,
         muteSounds: false,
-        muteNotifications: false
+        muteNotifications: false,
+        diagnosticLogging: false
     )
 
     /// Maximum history items to keep
     static let historyLimit = 5
 
     /// Memberwise initializer
-    init(version: Int, hotkeys: HotkeyConfigs, outputMode: OutputMode, history: [HistoryItem], whisperModel: String, llmModel: String, language: Language, customPrompt: String = defaultCustomPrompt, micSensitivity: MicSensitivity = .normal, muteSounds: Bool = false, muteNotifications: Bool = false) {
+    init(version: Int, hotkeys: HotkeyConfigs, outputMode: OutputMode, history: [HistoryItem], whisperModel: String, llmModel: String, language: Language, customPrompt: String = defaultCustomPrompt, micSensitivity: MicSensitivity = .normal, muteSounds: Bool = false, muteNotifications: Bool = false, diagnosticLogging: Bool = false) {
         self.version = version
         self.hotkeys = hotkeys
         self.outputMode = outputMode
@@ -94,6 +97,7 @@ struct AppConfig: Codable {
         self.micSensitivity = micSensitivity
         self.muteSounds = muteSounds
         self.muteNotifications = muteNotifications
+        self.diagnosticLogging = diagnosticLogging
     }
 
     /// Handle missing fields from old configs (v2 configs with active_mode are handled gracefully —
@@ -127,5 +131,6 @@ struct AppConfig: Codable {
         }
         muteSounds = try container.decodeIfPresent(Bool.self, forKey: .muteSounds) ?? false
         muteNotifications = try container.decodeIfPresent(Bool.self, forKey: .muteNotifications) ?? false
+        diagnosticLogging = try container.decodeIfPresent(Bool.self, forKey: .diagnosticLogging) ?? false
     }
 }

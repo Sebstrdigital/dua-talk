@@ -92,10 +92,30 @@ echo "    Model bundled ($(du -sh "${WHISPER_MODEL_DEST}" | cut -f1) total)"
 echo "==> Stripping extended attributes..."
 xattr -cr "${APP_EXPORT}"
 
-# Re-sign after stripping xattrs (must pass entitlements or they get stripped)
+# Re-sign after stripping xattrs
+# Sign inside-out: frameworks/helpers first, then the main app bundle.
+# --deep is unreliable for nested frameworks; sign each component explicitly.
 ENTITLEMENTS="${PROJECT_DIR}/Dikta/Resources/Dikta.entitlements"
 echo "==> Signing app..."
-codesign --force --deep --options runtime --entitlements "${ENTITLEMENTS}" --sign "${SIGNING_IDENTITY}" "${APP_EXPORT}"
+
+# Sign all nested Mach-O binaries, bundles, and frameworks inside Frameworks/ (deepest first)
+# This covers Sparkle's Autoupdate helper, XPC services, sub-frameworks, etc.
+find "${APP_EXPORT}/Contents/Frameworks" -type f -perm +111 | while read -r binary; do
+    # Only sign Mach-O binaries (skip scripts, plists, etc.)
+    if file "${binary}" | grep -q "Mach-O"; then
+        codesign --force --options runtime --timestamp --sign "${SIGNING_IDENTITY}" "${binary}"
+    fi
+done
+
+# Sign framework and bundle directories (inside-out: find sorts deeper paths first with -depth)
+# Preserve embedded entitlements for XPC services (Sparkle's Downloader needs sandbox + network.client)
+find "${APP_EXPORT}/Contents/Frameworks" -depth \
+    \( -name "*.framework" -o -name "*.xpc" -o -name "*.app" -o -name "*.bundle" \) | while read -r component; do
+    codesign --force --options runtime --timestamp --preserve-metadata=entitlements --sign "${SIGNING_IDENTITY}" "${component}"
+done
+
+# Sign the main app bundle last
+codesign --force --options runtime --timestamp --entitlements "${ENTITLEMENTS}" --sign "${SIGNING_IDENTITY}" "${APP_EXPORT}"
 
 # Step 3: Verify code signing
 echo "==> Verifying code signature..."
@@ -243,7 +263,7 @@ APPCAST_PATH="${DOCS_DIR}/appcast.xml"
 NEW_ITEM="        <item>
             <title>Dikta ${APP_VERSION}</title>
             <pubDate>${BUILD_DATE}</pubDate>
-            <sparkle:version>${APP_BUILD}</sparkle:version>
+            <sparkle:version>${APP_VERSION}</sparkle:version>
             <sparkle:shortVersionString>${APP_VERSION}</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure
@@ -297,8 +317,12 @@ git -C "${PROJECT_DIR}/.." commit -m "chore: update appcast for v${APP_VERSION}"
 git -C "${PROJECT_DIR}/.." push origin main
 echo "==> Appcast pushed to main (GitHub Pages)"
 
-# Create GitHub Release with DMG attached
+# Create GitHub Release with DMG attached (delete existing if re-releasing same version)
 echo "==> Creating GitHub Release ${RELEASE_TAG}..."
+if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPO}" &>/dev/null; then
+    echo "    Replacing existing release ${RELEASE_TAG}..."
+    gh release delete "${RELEASE_TAG}" --repo "${GITHUB_REPO}" --yes
+fi
 gh release create "${RELEASE_TAG}" \
     "${RELEASE_DMG}#Dikta ${APP_VERSION} (DMG)" \
     --repo "${GITHUB_REPO}" \

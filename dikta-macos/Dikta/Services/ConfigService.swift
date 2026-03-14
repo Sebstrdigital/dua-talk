@@ -18,6 +18,7 @@ final class ConfigService: ObservableObject {
 
         // Load or create default config
         config = Self.load(from: configFile) ?? .default
+        DiagnosticLogger.shared.isEnabled = config.diagnosticLogging
     }
 
     private static func load(from url: URL) -> AppConfig? {
@@ -158,6 +159,18 @@ final class ConfigService: ObservableObject {
         get { config.muteNotifications }
         set {
             config.muteNotifications = newValue
+            objectWillChange.send()
+            save()
+        }
+    }
+
+    // MARK: - Diagnostic Logging
+
+    var diagnosticLogging: Bool {
+        get { config.diagnosticLogging }
+        set {
+            config.diagnosticLogging = newValue
+            DiagnosticLogger.shared.isEnabled = newValue
             objectWillChange.send()
             save()
         }

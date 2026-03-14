@@ -22,7 +22,7 @@
         <item>
             <title>Dikta 1.0</title>
             <pubDate>Sat, 14 Mar 2026 05:22:31 +0000</pubDate>
-            <sparkle:version>1</sparkle:version>
+            <sparkle:version>1.0</sparkle:version>
             <sparkle:shortVersionString>1.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure

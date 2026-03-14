@@ -302,6 +302,10 @@ final class MenuBarViewModel: ObservableObject {
         configService.muteNotifications.toggle()
     }
 
+    func toggleDiagnosticLogging() {
+        configService.diagnosticLogging.toggle()
+    }
+
     // MARK: - Language
 
     func setLanguage(_ language: Language) {

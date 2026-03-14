@@ -40,6 +40,11 @@ struct DiktaApp: App {
     @StateObject private var viewModel = MenuBarViewModel()
     @StateObject private var sparkle = SparkleController()
 
+    init() {
+        // Share SparkleController with the About window
+        OnboardingWindowController.shared.sparkleController = _sparkle.wrappedValue
+    }
+
     var body: some Scene {
         MenuBarExtra {
             MenuBarView(viewModel: viewModel)

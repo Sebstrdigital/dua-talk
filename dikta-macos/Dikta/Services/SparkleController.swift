@@ -7,7 +7,7 @@ import Sparkle
 /// The underlying Sparkle controller owns the update check scheduling and UI.
 final class SparkleController: NSObject, ObservableObject, SPUUpdaterDelegate {
 
-    private let updaterController: SPUStandardUpdaterController
+    private var updaterController: SPUStandardUpdaterController!
 
     /// True when Sparkle has found a new version that the user has not yet installed or skipped.
     @Published var updateAvailable: Bool = false
@@ -16,15 +16,12 @@ final class SparkleController: NSObject, ObservableObject, SPUUpdaterDelegate {
     @Published var pendingVersion: String?
 
     override init() {
-        // Defer delegate assignment — we set it after super.init() below
+        super.init()
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
-            updaterDelegate: nil,
+            updaterDelegate: self,
             userDriverDelegate: nil
         )
-        super.init()
-        // Now set ourselves as the delegate so we receive update lifecycle callbacks
-        updaterController.updater.delegate = self
     }
 
     // MARK: - Public API
