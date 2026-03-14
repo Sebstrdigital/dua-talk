@@ -5,7 +5,7 @@ import Sparkle
 ///
 /// Lifecycle: created once in DiktaApp and passed down through the view hierarchy.
 /// The underlying Sparkle controller owns the update check scheduling and UI.
-final class SparkleController: ObservableObject {
+final class SparkleController: NSObject, ObservableObject, SPUUpdaterDelegate {
 
     private let updaterController: SPUStandardUpdaterController
 
@@ -15,13 +15,16 @@ final class SparkleController: ObservableObject {
     /// Version string of the pending update, e.g. "0.7". Nil when no update is available.
     @Published var pendingVersion: String?
 
-    init() {
-        // userInitiatedCheckCanBeSkipped: false → don't show "skip" button on manual checks
+    override init() {
+        // Defer delegate assignment — we set it after super.init() below
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: nil,
             userDriverDelegate: nil
         )
+        super.init()
+        // Now set ourselves as the delegate so we receive update lifecycle callbacks
+        updaterController.updater.delegate = self
     }
 
     // MARK: - Public API
@@ -54,6 +57,30 @@ final class SparkleController: ObservableObject {
         DispatchQueue.main.async {
             self.pendingVersion = nil
             self.updateAvailable = false
+        }
+    }
+
+    // MARK: - SPUUpdaterDelegate
+
+    /// Called when Sparkle finds a valid update — show the badge.
+    func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
+        markUpdateAvailable(version: item.displayVersionString)
+    }
+
+    /// Called when Sparkle confirms no update is available — clear the badge.
+    func updaterDidNotFindUpdate(_ updater: SPUUpdater) {
+        clearUpdate()
+    }
+
+    /// Called when the user skips a version — clear the badge.
+    func updater(_ updater: SPUUpdater, userDidSkip item: SUAppcastItem) {
+        clearUpdate()
+    }
+
+    /// Called after a successful update installation — clear the badge.
+    func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: Error?) {
+        if error == nil {
+            clearUpdate()
         }
     }
 }

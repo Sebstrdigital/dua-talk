@@ -225,11 +225,47 @@ DMG_SIZE=$(stat -f%z "${RELEASE_DMG}")
 BUILD_DATE=$(date -u +"%a, %d %b %Y %H:%M:%S +0000")
 
 # Generate/update appcast.xml in docs/
+# Preserves existing <item> entries so users on older versions can still update.
 DOCS_DIR="${PROJECT_DIR}/../docs"
 mkdir -p "${DOCS_DIR}"
 APPCAST_PATH="${DOCS_DIR}/appcast.xml"
 
-cat > "${APPCAST_PATH}" << APPCAST_EOF
+# Build the new <item> block
+NEW_ITEM="        <item>
+            <title>Dikta ${APP_VERSION}</title>
+            <pubDate>${BUILD_DATE}</pubDate>
+            <sparkle:version>${APP_BUILD}</sparkle:version>
+            <sparkle:shortVersionString>${APP_VERSION}</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure
+                url=\"${DOWNLOAD_URL}\"
+                sparkle:edSignature=\"${EDDSA_SIG}\"
+                length=\"${DMG_SIZE}\"
+                type=\"application/octet-stream\"
+            />
+        </item>"
+
+if [ -f "${APPCAST_PATH}" ] && grep -q '<item>' "${APPCAST_PATH}" 2>/dev/null; then
+    # Appcast already has entries — insert new item before first existing <item>
+    # Use Python for reliable XML-safe insertion (available on macOS by default)
+    python3 - "${APPCAST_PATH}" "${NEW_ITEM}" << 'PYEOF'
+import sys, re
+
+appcast_path = sys.argv[1]
+new_item = sys.argv[2]
+
+with open(appcast_path, 'r') as f:
+    content = f.read()
+
+# Insert new item before the first existing <item>
+content = content.replace('<item>', new_item + '\n        <item>', 1)
+
+with open(appcast_path, 'w') as f:
+    f.write(content)
+PYEOF
+else
+    # No existing appcast or no items yet — write a fresh one
+    cat > "${APPCAST_PATH}" << APPCAST_EOF
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"
      xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -238,22 +274,11 @@ cat > "${APPCAST_PATH}" << APPCAST_EOF
         <link>https://sebstrdigital.github.io/dikta/appcast.xml</link>
         <description>Dikta app updates</description>
         <language>en</language>
-        <item>
-            <title>Dikta ${APP_VERSION}</title>
-            <pubDate>${BUILD_DATE}</pubDate>
-            <sparkle:version>${APP_BUILD}</sparkle:version>
-            <sparkle:shortVersionString>${APP_VERSION}</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure
-                url="${DOWNLOAD_URL}"
-                sparkle:edSignature="${EDDSA_SIG}"
-                length="${DMG_SIZE}"
-                type="application/octet-stream"
-            />
-        </item>
+${NEW_ITEM}
     </channel>
 </rss>
 APPCAST_EOF
+fi
 
 echo "==> Appcast written: ${APPCAST_PATH}"
 
