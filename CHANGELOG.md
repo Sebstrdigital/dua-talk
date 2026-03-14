@@ -2,6 +2,15 @@
 
 All notable changes to Dikta will be documented in this file.
 
+## [0.7] - upcoming
+
+### Features
+- Auto-update via Sparkle 2.x — app checks for updates silently on launch; standard Sparkle dialog shown when new version is available
+- "Check for Updates..." in Advanced menu — manual update check on demand
+- "Automatically Check for Updates" toggle in Advanced menu — opt out of launch-time checks (persisted across restarts)
+- Update Available badge — persistent "Update Available (vX.Y)" indicator at top of menu bar menu; disappears after install or skip
+- Release pipeline automation — `build-release.sh` now generates `appcast.xml` with EdDSA signature, creates GitHub Release, and deploys to GitHub Pages in one command
+
 ## [0.5] - 2026-03-07
 
 ### Reliability
