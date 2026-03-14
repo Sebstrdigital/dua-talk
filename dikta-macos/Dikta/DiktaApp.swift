@@ -1,4 +1,5 @@
 import SwiftUI
+import Sparkle
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -38,10 +39,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 struct DiktaApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var viewModel = MenuBarViewModel()
+    @StateObject private var sparkle = SparkleController()
 
     var body: some Scene {
         MenuBarExtra {
             MenuBarView(viewModel: viewModel)
+                .environmentObject(sparkle)
         } label: {
             menuBarLabel
         }
