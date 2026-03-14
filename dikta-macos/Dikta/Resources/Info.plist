@@ -28,5 +28,13 @@
     <string>Dikta needs microphone access to record your voice for dictation.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>SUFeedURL</key>
+    <string>https://sebstrdigital.github.io/dikta/appcast.xml</string>
+    <!-- RELEASE GATE: Replace SUPublicEDKey with the real EdDSA public key before shipping.
+         Generate with: sparkle_bin/generate_keys → save private key at ~/.dikta-sparkle-key
+         The public key string is printed by generate_keys and must be pasted here.
+         build-release.sh will abort if this placeholder value is still present. -->
+    <key>SUPublicEDKey</key>
+    <string>PLACEHOLDER_EDKEY_REPLACE_BEFORE_RELEASE</string>
 </dict>
 </plist>

@@ -152,5 +152,165 @@ echo ""
 echo "============================================================"
 echo "  BUILD COMPLETE"
 echo "  DMG: ${DMG_PATH}"
-echo "  Send this file to your friends!"
+echo "============================================================"
+
+# ============================================================
+# Step 7: Appcast + GitHub Release (Sparkle auto-update)
+# ============================================================
+#
+# Prerequisites:
+#   - gh CLI authenticated: gh auth login
+#   - Sparkle private key at ~/.dikta-sparkle-key
+#     (generated with: sparkle_bin/generate_keys)
+#   - GitHub Pages enabled on the repo (docs/ folder on main)
+#
+# The appcast.xml is written to docs/appcast.xml and committed
+# to main. Sparkle checks this URL for updates.
+# ============================================================
+
+# Locate Sparkle's sign_update tool (resolved from the Xcode SPM cache)
+SPARKLE_BIN=""
+if SPARKLE_CHECKOUT=$(find "${HOME}/Library/Developer/Xcode/DerivedData" \
+        -name "sign_update" 2>/dev/null | head -1); then
+    SPARKLE_BIN="$(dirname "${SPARKLE_CHECKOUT}")"
+fi
+if [ -z "${SPARKLE_BIN}" ]; then
+    # Fallback: look in SPM global cache
+    SPARKLE_BIN_PATH=$(find "${HOME}/.spm/checkouts" \
+        -name "sign_update" 2>/dev/null | head -1)
+    [ -n "${SPARKLE_BIN_PATH}" ] && SPARKLE_BIN="$(dirname "${SPARKLE_BIN_PATH}")"
+fi
+
+if [ -z "${SPARKLE_BIN}" ]; then
+    echo "WARN: sign_update not found — skipping appcast generation."
+    echo "      Build and open the project in Xcode once to resolve Sparkle, then re-run."
+    exit 0
+fi
+
+# Read version from the built app
+APP_VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" \
+    "${APP_EXPORT}/Contents/Info.plist")
+APP_BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" \
+    "${APP_EXPORT}/Contents/Info.plist")
+
+PRIVATE_KEY="${HOME}/.dikta-sparkle-key"
+if [ ! -f "${PRIVATE_KEY}" ]; then
+    echo "ERROR: Sparkle private key not found at ${PRIVATE_KEY}"
+    echo "       Generate one with: ${SPARKLE_BIN}/generate_keys"
+    exit 1
+fi
+
+# Guard: abort if Info.plist still has the placeholder EdDSA key
+EMBEDDED_KEY=$(/usr/libexec/PlistBuddy -c "Print SUPublicEDKey" "${APP_EXPORT}/Contents/Info.plist" 2>/dev/null || echo "")
+if [ "${EMBEDDED_KEY}" = "PLACEHOLDER_EDKEY_REPLACE_BEFORE_RELEASE" ] || [ -z "${EMBEDDED_KEY}" ]; then
+    echo "ERROR: SUPublicEDKey in Info.plist is still the placeholder value."
+    echo "       Replace it with the real EdDSA public key before building a release."
+    echo "       Generate the key: ${SPARKLE_BIN}/generate_keys"
+    exit 1
+fi
+
+# GitHub repo (owner/name)
+GITHUB_REPO="Sebstrdigital/dikta"
+RELEASE_TAG="v${APP_VERSION}"
+DMG_FILENAME="Dikta-${APP_VERSION}.dmg"
+DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_TAG}/${DMG_FILENAME}"
+
+# Copy DMG to release-named file
+RELEASE_DMG="${PROJECT_DIR}/build/${DMG_FILENAME}"
+cp "${DMG_PATH}" "${RELEASE_DMG}"
+
+# Generate EdDSA signature
+echo "==> Signing DMG with EdDSA..."
+EDDSA_SIG=$("${SPARKLE_BIN}/sign_update" --ed-key-file "${PRIVATE_KEY}" "${RELEASE_DMG}" | \
+    grep -E 'sparkle:edSignature' | sed 's/.*sparkle:edSignature="\([^"]*\)".*/\1/')
+
+if [ -z "${EDDSA_SIG}" ]; then
+    echo "ERROR: Failed to generate EdDSA signature"
+    exit 1
+fi
+echo "    Signature: ${EDDSA_SIG}"
+
+DMG_SIZE=$(stat -f%z "${RELEASE_DMG}")
+BUILD_DATE=$(date -u +"%a, %d %b %Y %H:%M:%S +0000")
+
+# Generate/update appcast.xml in docs/
+# Preserves existing <item> entries so users on older versions can still update.
+DOCS_DIR="${PROJECT_DIR}/../docs"
+mkdir -p "${DOCS_DIR}"
+APPCAST_PATH="${DOCS_DIR}/appcast.xml"
+
+# Build the new <item> block
+NEW_ITEM="        <item>
+            <title>Dikta ${APP_VERSION}</title>
+            <pubDate>${BUILD_DATE}</pubDate>
+            <sparkle:version>${APP_BUILD}</sparkle:version>
+            <sparkle:shortVersionString>${APP_VERSION}</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure
+                url=\"${DOWNLOAD_URL}\"
+                sparkle:edSignature=\"${EDDSA_SIG}\"
+                length=\"${DMG_SIZE}\"
+                type=\"application/octet-stream\"
+            />
+        </item>"
+
+if [ -f "${APPCAST_PATH}" ] && grep -q '<item>' "${APPCAST_PATH}" 2>/dev/null; then
+    # Appcast already has entries — insert new item before first existing <item>
+    # Use Python for reliable XML-safe insertion (available on macOS by default)
+    python3 - "${APPCAST_PATH}" "${NEW_ITEM}" << 'PYEOF'
+import sys, re
+
+appcast_path = sys.argv[1]
+new_item = sys.argv[2]
+
+with open(appcast_path, 'r') as f:
+    content = f.read()
+
+# Insert new item before the first existing <item>
+content = content.replace('<item>', new_item + '\n        <item>', 1)
+
+with open(appcast_path, 'w') as f:
+    f.write(content)
+PYEOF
+else
+    # No existing appcast or no items yet — write a fresh one
+    cat > "${APPCAST_PATH}" << APPCAST_EOF
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"
+     xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>Dikta Changelog</title>
+        <link>https://sebstrdigital.github.io/dikta/appcast.xml</link>
+        <description>Dikta app updates</description>
+        <language>en</language>
+${NEW_ITEM}
+    </channel>
+</rss>
+APPCAST_EOF
+fi
+
+echo "==> Appcast written: ${APPCAST_PATH}"
+
+# Commit and push appcast.xml to main (GitHub Pages serves from docs/)
+git -C "${PROJECT_DIR}/.." add docs/appcast.xml
+git -C "${PROJECT_DIR}/.." commit -m "chore: update appcast for v${APP_VERSION}"
+git -C "${PROJECT_DIR}/.." push origin main
+echo "==> Appcast pushed to main (GitHub Pages)"
+
+# Create GitHub Release with DMG attached
+echo "==> Creating GitHub Release ${RELEASE_TAG}..."
+gh release create "${RELEASE_TAG}" \
+    "${RELEASE_DMG}#Dikta ${APP_VERSION} (DMG)" \
+    --repo "${GITHUB_REPO}" \
+    --title "Dikta v${APP_VERSION}" \
+    --notes "Dikta v${APP_VERSION}" \
+    --latest
+
+echo ""
+echo "============================================================"
+echo "  RELEASE COMPLETE"
+echo "  Version: ${APP_VERSION}"
+echo "  DMG:     ${RELEASE_DMG}"
+echo "  Tag:     ${RELEASE_TAG}"
+echo "  Appcast: https://sebstrdigital.github.io/dikta/appcast.xml"
 echo "============================================================"
