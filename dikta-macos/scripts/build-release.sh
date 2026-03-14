@@ -200,6 +200,15 @@ if [ ! -f "${PRIVATE_KEY}" ]; then
     exit 1
 fi
 
+# Guard: abort if Info.plist still has the placeholder EdDSA key
+EMBEDDED_KEY=$(/usr/libexec/PlistBuddy -c "Print SUPublicEDKey" "${APP_EXPORT}/Contents/Info.plist" 2>/dev/null || echo "")
+if [ "${EMBEDDED_KEY}" = "PLACEHOLDER_EDKEY_REPLACE_BEFORE_RELEASE" ] || [ -z "${EMBEDDED_KEY}" ]; then
+    echo "ERROR: SUPublicEDKey in Info.plist is still the placeholder value."
+    echo "       Replace it with the real EdDSA public key before building a release."
+    echo "       Generate the key: ${SPARKLE_BIN}/generate_keys"
+    exit 1
+fi
+
 # GitHub repo (owner/name)
 GITHUB_REPO="Sebstrdigital/dikta"
 RELEASE_TAG="v${APP_VERSION}"
@@ -283,7 +292,6 @@ fi
 echo "==> Appcast written: ${APPCAST_PATH}"
 
 # Commit and push appcast.xml to main (GitHub Pages serves from docs/)
-CURRENT_BRANCH=$(git -C "${PROJECT_DIR}" rev-parse --abbrev-ref HEAD)
 git -C "${PROJECT_DIR}/.." add docs/appcast.xml
 git -C "${PROJECT_DIR}/.." commit -m "chore: update appcast for v${APP_VERSION}"
 git -C "${PROJECT_DIR}/.." push origin main
