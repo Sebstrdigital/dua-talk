@@ -321,6 +321,34 @@ final class MenuBarViewModel: ObservableObject {
         setLanguage(next)
     }
 
+    /// Toggle a language's enabled state in the carousel.
+    /// - If enabling: also sets it as the active language.
+    /// - If disabling and it was the active language: cycles to the next enabled language.
+    /// - No-op if it is the last enabled language (enforced by ConfigService).
+    func toggleLanguage(_ language: Language) {
+        let wasEnabled = configService.isLanguageEnabled(language)
+        let isActive = configService.language == language
+        let isLastEnabled = configService.enabledLanguages.count == 1 && wasEnabled
+
+        guard !isLastEnabled else { return }
+
+        if wasEnabled {
+            // If disabling the active language, cycle away first
+            if isActive {
+                // Compute next among remaining enabled (excluding this one)
+                let remaining = configService.enabledLanguages.filter { $0 != language }
+                let nextLang = remaining.first ?? language
+                configService.language = nextLang
+            }
+            configService.disableLanguage(language)
+        } else {
+            // Enable and activate
+            configService.enableLanguage(language)
+            configService.language = language
+            sendNotification(title: "Write in", body: language.displayName, isRoutine: true)
+        }
+    }
+
     // MARK: - Mic Sensitivity
 
     func setMicSensitivity(_ sensitivity: MicSensitivity) {
