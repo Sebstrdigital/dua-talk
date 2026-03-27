@@ -1,5 +1,7 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using DiktaWindows.Models;
 using DiktaWindows.Services;
 
 namespace DiktaWindows.Views;
@@ -16,6 +18,8 @@ public partial class SettingsWindow : Window
         _hotkeyManager = hotkeyManager;
 
         PopulateKeyCombo();
+        PopulateLanguageCombo();
+        PopulateModelCombo();
         LoadCurrentHotkey();
     }
 
@@ -44,6 +48,65 @@ public partial class SettingsWindow : Window
         KeyCombo.SelectedItem = currentKey;
         if (KeyCombo.SelectedItem == null && KeyCombo.Items.Count > 0)
             KeyCombo.SelectedIndex = 0;
+
+        MuteSoundsCheckBox.IsChecked = _configService.Config.MuteSounds;
+
+        var currentLang = _configService.Config.Language;
+        foreach (ComboBoxItem item in LanguageCombo.Items)
+        {
+            if (item.Tag?.ToString() == currentLang)
+            {
+                LanguageCombo.SelectedItem = item;
+                break;
+            }
+        }
+        if (LanguageCombo.SelectedItem == null && LanguageCombo.Items.Count > 0)
+            LanguageCombo.SelectedIndex = 0;
+
+        var currentModel = _configService.Config.WhisperModel;
+        foreach (ComboBoxItem item in ModelCombo.Items)
+        {
+            if (item.Tag?.ToString() == currentModel)
+            {
+                ModelCombo.SelectedItem = item;
+                break;
+            }
+        }
+        if (ModelCombo.SelectedItem == null && ModelCombo.Items.Count > 0)
+            ModelCombo.SelectedIndex = 0;
+    }
+
+    private void PopulateLanguageCombo()
+    {
+        foreach (var lang in Language.All)
+        {
+            LanguageCombo.Items.Add(new ComboBoxItem
+            {
+                Content = lang.DisplayName,
+                Tag = lang.WhisperCode
+            });
+        }
+    }
+
+    private void PopulateModelCombo()
+    {
+        var models = new[]
+        {
+            ("small",  "small (~500 MB)"),
+            ("medium", "medium (~1.5 GB)"),
+            ("large",  "large (~3 GB)"),
+        };
+
+        foreach (var (key, label) in models)
+        {
+            var path = Path.Combine(ConfigService.ModelsDir, $"ggml-{key}.bin");
+            var status = File.Exists(path) ? "Downloaded" : "Not downloaded";
+            ModelCombo.Items.Add(new ComboBoxItem
+            {
+                Content = $"{label}  —  {status}",
+                Tag = key
+            });
+        }
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -62,6 +125,14 @@ public partial class SettingsWindow : Window
         _hotkeyManager.ReregisterHotkey(modifierString, key);
         _configService.Config.HotkeyModifiers = modifierString;
         _configService.Config.HotkeyKey = key;
+        _configService.Config.MuteSounds = MuteSoundsCheckBox.IsChecked ?? false;
+
+        if (LanguageCombo.SelectedItem is ComboBoxItem langItem)
+            _configService.Config.Language = langItem.Tag?.ToString() ?? _configService.Config.Language;
+
+        if (ModelCombo.SelectedItem is ComboBoxItem modelItem)
+            _configService.Config.WhisperModel = modelItem.Tag?.ToString() ?? _configService.Config.WhisperModel;
+
         _configService.Save();
 
         Close();
