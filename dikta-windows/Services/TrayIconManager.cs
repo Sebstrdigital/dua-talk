@@ -47,6 +47,9 @@ public class TrayIconManager : IDisposable
         };
 
         _hotkeyManager.HotkeyPressed += OnHotkeyPressed;
+
+        if (_configService.WasReset)
+            _notifyIcon.ShowBalloonTip(3000, "Dikta", "Config was unreadable — reset to defaults.", ToolTipIcon.Warning);
     }
 
     private string BuildTooltip()
@@ -228,7 +231,10 @@ public class TrayIconManager : IDisposable
             _processing = false;
             _isRecording = false;
             UpdateTrayState();
-            System.Diagnostics.Debug.WriteLine($"OnHotkeyPressed error: {ex}");
+            var message = ex is InvalidOperationException && ex.Message == "No microphone found"
+                ? "No microphone found"
+                : "Transcription failed. Please try again.";
+            _notifyIcon?.ShowBalloonTip(3000, "Dikta", message, ToolTipIcon.Error);
         }
     }
 
