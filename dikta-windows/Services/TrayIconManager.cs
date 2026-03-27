@@ -12,6 +12,7 @@ public class TrayIconManager : IDisposable
     private readonly TranscriberService _transcriber;
     private readonly AudioFeedback _audioFeedback;
     private readonly HistoryService _history;
+    private readonly ModelDownloader _modelDownloader;
 
     private NotifyIcon? _notifyIcon;
     private bool _isRecording;
@@ -25,6 +26,7 @@ public class TrayIconManager : IDisposable
         _transcriber = new TranscriberService(configService);
         _audioFeedback = new AudioFeedback(configService);
         _history = new HistoryService();
+        _modelDownloader = new ModelDownloader();
     }
 
     public void Initialize()
@@ -117,12 +119,36 @@ public class TrayIconManager : IDisposable
                 // Start recording
                 if (!_transcriber.IsModelAvailable())
                 {
-                    System.Windows.MessageBox.Show(
-                        $"Whisper model not found.\n\nPlease download the model file to:\n{ConfigService.ModelsDir}",
-                        "Dikta — Model Missing",
-                        System.Windows.MessageBoxButton.OK,
-                        System.Windows.MessageBoxImage.Warning);
-                    return;
+                    var result = System.Windows.MessageBox.Show(
+                        "The Whisper model is not downloaded yet.\n\nDownload model now? (~150 MB)",
+                        "Dikta — Download Model",
+                        System.Windows.MessageBoxButton.YesNo,
+                        System.Windows.MessageBoxImage.Question);
+
+                    if (result != System.Windows.MessageBoxResult.Yes)
+                        return;
+
+                    _processing = true;
+                    _notifyIcon!.Text = "Dikta — Downloading model…";
+                    try
+                    {
+                        var modelName = _configService.Config.WhisperModel;
+                        var destPath = System.IO.Path.Combine(ConfigService.ModelsDir, $"ggml-{modelName}.bin");
+                        await _modelDownloader.DownloadModelAsync(modelName, destPath);
+                        _notifyIcon.Text = "Dikta";
+                    }
+                    catch (Exception dlEx)
+                    {
+                        _notifyIcon.Text = "Dikta";
+                        _processing = false;
+                        System.Windows.MessageBox.Show(
+                            $"Model download failed:\n{dlEx.Message}",
+                            "Dikta — Download Error",
+                            System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Error);
+                        return;
+                    }
+                    _processing = false;
                 }
 
                 _audioFeedback.PlayStart();
