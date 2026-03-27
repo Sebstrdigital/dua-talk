@@ -16,7 +16,7 @@ Download the latest DMG from [Releases](https://github.com/Sebstrdigital/dikta/r
 - **Silence Auto-Stop** — recording stops automatically after 10 seconds of silence
 - **Text-to-Speech** — select text and have it read aloud via Kokoro TTS (optional, installed separately)
 - **History** — access your last 5 dictations from the menu bar
-- **Multi-language** — English, Swedish, and Indonesian
+- **Multi-language** — 12 languages: English, Swedish, Spanish, French, German, Portuguese, Italian, Dutch, Finnish, Norwegian, Danish, and Indonesian. Whisper transcribes what it hears regardless of the selected language — the selector is a preference hint used to improve accuracy when languages could be ambiguous (e.g. Norwegian vs Danish, Portuguese vs Spanish). For clearly different languages it has minimal effect.
 - **Mic Sensitivity** — tune speech detection sensitivity for Normal or Headset use
 - **Launch at Login** — optionally start Dikta automatically when you log in
 - **Auto-Update** — checks for updates via Sparkle; configure in the About screen
@@ -59,8 +59,17 @@ Dikta
 │   ├── Mute Notifications
 │   └── Mic Sensitivity: Normal / Headset
 ├── Write in: English >
-│   ├── English
-│   ├── Svenska
+│   ├── ✓ English (enabled)
+│   ├── Svenska (enabled)
+│   ├── Español
+│   ├── Français
+│   ├── Deutsch
+│   ├── Português
+│   ├── Italiano
+│   ├── Nederlands
+│   ├── Suomi
+│   ├── Norsk
+│   ├── Dansk
 │   └── Indonesia
 ├── Advanced >
 │   ├── Start at Login

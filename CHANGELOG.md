@@ -2,6 +2,13 @@
 
 All notable changes to Dikta will be documented in this file.
 
+## [1.1] - 2026-03-27
+
+### Features
+- **12 languages** — added Spanish, French, German, Portuguese, Italian, Dutch, Finnish, Norwegian, and Danish alongside the existing English, Swedish, and Indonesian
+- **Enable/disable languages** — each language in the Write In menu can be toggled on or off; only enabled languages appear in the hotkey carousel
+- Language selection is a preference hint for Whisper — it improves accuracy when languages could be ambiguous (e.g. Norwegian vs Danish, Portuguese vs Spanish). Whisper always transcribes what it hears; the selector guides detection rather than restricting it.
+
 ## [1.0.2] - 2026-03-14
 
 ### Features
