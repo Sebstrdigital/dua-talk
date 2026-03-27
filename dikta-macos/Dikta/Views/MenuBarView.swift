@@ -147,19 +147,22 @@ struct WriteInMenu: View {
     @ObservedObject var viewModel: MenuBarViewModel
 
     var body: some View {
-        Menu("Write in: \(viewModel.configService.language.displayName)") {
+        Menu("Write in: \(viewModel.configService.language.menuBarCode)") {
             ForEach(Language.allCases, id: \.self) { language in
+                let isEnabled = viewModel.configService.isLanguageEnabled(language)
+                let isLastEnabled = viewModel.configService.enabledLanguages.count == 1 && isEnabled
                 Button(action: {
-                    viewModel.setLanguage(language)
+                    viewModel.toggleLanguage(language)
                 }) {
                     HStack {
                         Text(language.displayName)
-                        if viewModel.configService.language == language {
+                        if isEnabled {
                             Spacer()
                             Image(systemName: "checkmark")
                         }
                     }
                 }
+                .disabled(isLastEnabled)
             }
         }
     }
