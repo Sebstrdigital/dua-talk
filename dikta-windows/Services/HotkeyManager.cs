@@ -107,6 +107,30 @@ public class HotkeyManager : IDisposable
         };
     }
 
+    public void ReregisterHotkey(string modifiers, string key)
+    {
+        if (_source == null) return;
+
+        if (_registered)
+        {
+            UnregisterHotKey(_source.Handle, HOTKEY_ID);
+            _registered = false;
+        }
+
+        uint newMods = ParseModifiers(modifiers) | MOD_NOREPEAT;
+        uint newKey = ParseKey(key);
+
+        if (!RegisterHotKey(_source.Handle, HOTKEY_ID, newMods, newKey))
+        {
+            var error = Marshal.GetLastWin32Error();
+            System.Diagnostics.Debug.WriteLine($"ReregisterHotkey failed with error code: {error}");
+        }
+        else
+        {
+            _registered = true;
+        }
+    }
+
     private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == WM_HOTKEY && wParam.ToInt32() == HOTKEY_ID)

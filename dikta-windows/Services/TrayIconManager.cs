@@ -21,6 +21,7 @@ public class TrayIconManager : IDisposable
     private Icon? _recordingIcon;
     private bool _isRecording;
     private bool _processing;
+    private SettingsWindow? _settingsWindow;
 
     public TrayIconManager(ConfigService configService, HotkeyManager hotkeyManager)
     {
@@ -240,7 +241,17 @@ public class TrayIconManager : IDisposable
 
     private void OpenSettings()
     {
-        // TODO: implement settings window
+        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        {
+            if (_settingsWindow != null)
+            {
+                _settingsWindow.Activate();
+                return;
+            }
+            _settingsWindow = new SettingsWindow(_configService, _hotkeyManager);
+            _settingsWindow.Closed += (s, e) => _settingsWindow = null;
+            _settingsWindow.Show();
+        });
     }
 
     public void Dispose()
