@@ -11,6 +11,7 @@
 | confirmed | DiagnosticLogger never gated or removed before release | 2026-03-27 | 2026-03-27 |
 | confirmed | CHANGELOG.md [0.6] entry missing bracket noise token strip fix | 2026-03-27 | 2026-03-27 |
 | confirmed | Pre-existing working-tree changes from v0.6 never committed to main | 2026-03-27 | 2026-03-27 |
+| confirmed | 17 zombie agent panes accumulate during parallel sprints — no automatic cleanup mechanism | 2026-03-27 | 2026-03-27 |
 
 ---
 
