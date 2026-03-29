@@ -102,6 +102,7 @@ struct StructuredTextFormatter: TextFormatter {
         case bulletList(items: [String], preamble: String?)
         case numberedList(items: [String], preamble: String?)
         case sections(groups: [(heading: String, body: String)])
+        case paragraphs(groups: [[String]])
         case noChange
     }
     func format(_ text: String) -> String {
@@ -114,6 +115,7 @@ struct StructuredTextFormatter: TextFormatter {
         case .bulletList(let items, let preamble): return formatBullets(items, preamble: preamble)
         case .numberedList(let items, let preamble): return formatNumbered(items, preamble: preamble)
         case .sections(let groups): return formatSections(groups)
+        case .paragraphs(let groups): return formatParagraphs(groups)
         case .noChange: return trimmed
         }
     }
@@ -146,21 +148,33 @@ struct StructuredTextFormatter: TextFormatter {
                 .filter { !$0.isEmpty }
             if items.count >= 3 { return .bulletList(items: items, preamble: beforeColon + ":") }
         }
+        let topicShiftPrefixes = ["how about","by the way","on another note","on a different note","on the other hand","one more thing","besides that","apart from that","moving on","additionally","furthermore","moreover","separately","regarding","as for","however","that said","anyway","also"]
+        let hasTopicShift = sentences.contains { s in let lower = s.lowercased(); return topicShiftPrefixes.contains(where: { lower.hasPrefix($0) }) }
         let allShort = sentences.allSatisfy { $0.components(separatedBy: " ").count < 15 }
-        if allShort && sentences.count >= 3 {
-            let nonVerbStarts: Set<String> = ["i","we","he","she","it","they","you","my","our","his","her","its","their","the","a","an","in","on","at","for","with","to","from","by","of","about","and","but","or","so","yet","this","that","these","those","one","two","first","second"]
+        if allShort && sentences.count >= 3 && !hasTopicShift {
+            let nonVerbStarts: Set<String> = ["i","we","he","she","it","they","you","my","our","his","her","its","their","the","a","an","in","on","at","for","with","to","from","by","of","about","and","but","or","so","yet","this","that","these","those","one","two","first","second","each","all","most","some","many","every","several","both","neither","either"]
             let imperativeCount = sentences.filter { let w = $0.components(separatedBy: " ").first?.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ".!?,")) ?? ""; return !nonVerbStarts.contains(w) }.count
-            return Double(imperativeCount) / Double(sentences.count) >= 0.6 ? .numberedList(items: sentences, preamble: nil) : .bulletList(items: sentences, preamble: nil)
+            let ratio = Double(imperativeCount) / Double(sentences.count)
+            if ratio >= 0.6 { return .numberedList(items: sentences, preamble: nil) }
+            else if sentences.count < 5 { return .bulletList(items: sentences, preamble: nil) }
+            // For 5+ sentences with low imperative ratio, fall through to paragraph splitting.
         }
-        let transitionPhrases = ["by the way","another thing","on another note","on a different note","on the other hand","in addition","one more thing","besides that","apart from that","moving on","additionally","furthermore","moreover","separately","regarding","as for","also","however","that said","anyway"]
+        let transitionPhrases = ["how about","by the way","another thing","on another note","on a different note","on the other hand","in addition","one more thing","besides that","apart from that","moving on","additionally","furthermore","moreover","separately","regarding","as for","also","however","that said","anyway"]
         var groups: [[String]] = [[]]
         for sentence in sentences {
             let lower = sentence.lowercased()
             if transitionPhrases.contains(where: { lower.hasPrefix($0) }) && !groups.last!.isEmpty { groups.append([sentence]) }
             else { groups[groups.count - 1].append(sentence) }
         }
-        if groups.count >= 2 && groups.count <= 5 && groups.allSatisfy({ $0.count >= 2 }) {
-            return .sections(groups: groups.map { (heading: extractHeading(from: $0[0]), body: $0.joined(separator: " ")) })
+        if groups.count >= 2 && groups.count <= 8 && !groups[0].isEmpty {
+            if groups.allSatisfy({ $0.count >= 2 }) {
+                return .sections(groups: groups.map { (heading: extractHeading(from: $0[0]), body: $0.joined(separator: " ")) })
+            }
+            return .paragraphs(groups: groups)
+        }
+        if sentences.count >= 5 {
+            let mid = sentences.count / 2
+            return .paragraphs(groups: [Array(sentences[0..<mid]), Array(sentences[mid...])])
         }
         return .noChange
     }
@@ -177,6 +191,7 @@ struct StructuredTextFormatter: TextFormatter {
     private func formatBullets(_ items: [String], preamble: String?) -> String { var r = ""; if let p = preamble { r += p + "\n\n" }; r += items.map { "- " + trimItem(stripMarker($0)) }.joined(separator: "\n"); return r }
     private func formatNumbered(_ items: [String], preamble: String?) -> String { var r = ""; if let p = preamble { r += p + "\n\n" }; r += items.enumerated().map { "\($0.0 + 1). " + trimItem(stripFiller(stripMarker($0.1))) }.joined(separator: "\n"); return r }
     private func formatSections(_ groups: [(heading: String, body: String)]) -> String { groups.map { "## \($0.heading)\n\n\($0.body)" }.joined(separator: "\n\n") }
+    private func formatParagraphs(_ groups: [[String]]) -> String { groups.filter { !$0.isEmpty }.map { $0.joined(separator: " ") }.joined(separator: "\n\n") }
 }
 
 // -- MessageFormatter.swift --
