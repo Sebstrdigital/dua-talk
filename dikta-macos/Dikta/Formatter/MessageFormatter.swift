@@ -13,7 +13,7 @@ struct MessageFormatter: TextFormatter {
         let (openingPleasantry, afterOpening) = extractOpeningPleasantry(afterGreeting)
         let (signOff, afterSignOffExtracted) = extractSignOff(afterOpening)
         let (closingPleasantry, body) = extractClosingPleasantry(afterSignOffExtracted)
-        let structuredBody = structureBody(body)
+        let structuredBody = StructuredTextFormatter().format(body)
 
         var parts: [String] = []
         if let g = greeting { parts.append(g) }
@@ -288,65 +288,4 @@ struct MessageFormatter: TextFormatter {
         return (nil, text)
     }
 
-    // MARK: - Zone 3: Body structuring
-
-    private func structureBody(_ text: String) -> String {
-        let trimmed = text.trimmingCharacters(in: .whitespaces)
-        if trimmed.isEmpty { return "" }
-
-        let sentences = splitSentences(trimmed)
-        if sentences.count <= 1 { return trimmed }
-
-        let transitionPhrases = [
-            "by the way", "another thing", "on another note",
-            "on a different note", "on the other hand",
-            "in addition", "one more thing", "besides that",
-            "apart from that", "moving on",
-            "additionally", "furthermore", "moreover",
-            "separately", "regarding", "as for",
-            "also", "however", "that said", "anyway"
-        ]
-
-        // Group sentences into paragraphs by splitting on transition words
-        var paragraphs: [[String]] = [[]]
-
-        for sentence in sentences {
-            let lower = sentence.lowercased()
-            let startsWithTransition = transitionPhrases.contains { lower.hasPrefix($0) }
-
-            if startsWithTransition && !paragraphs.last!.isEmpty {
-                paragraphs.append([sentence])
-            } else {
-                paragraphs[paragraphs.count - 1].append(sentence)
-            }
-        }
-
-        // Fallback: if no transitions found and text is long, split every 3 sentences
-        if paragraphs.count == 1 && sentences.count > 4 {
-            paragraphs = []
-            for i in stride(from: 0, to: sentences.count, by: 3) {
-                let end = min(i + 3, sentences.count)
-                paragraphs.append(Array(sentences[i..<end]))
-            }
-        }
-
-        // Keep question clusters together
-        var merged: [[String]] = [paragraphs[0]]
-        for i in 1..<paragraphs.count {
-            let prevLast = merged.last?.last ?? ""
-            let currFirst = paragraphs[i].first?.lowercased() ?? ""
-
-            if prevLast.hasSuffix("?") &&
-                (currFirst.hasPrefix("or ") || currFirst.hasPrefix("and ") ||
-                currFirst.hasPrefix("what about") || currFirst.hasPrefix("how about") ||
-                currFirst.hasPrefix("should i")) {
-                merged[merged.count - 1].append(contentsOf: paragraphs[i])
-            } else {
-                merged.append(paragraphs[i])
-            }
-        }
-
-        return merged.map { $0.joined(separator: " ") }
-                    .joined(separator: "\n\n")
-    }
 }
