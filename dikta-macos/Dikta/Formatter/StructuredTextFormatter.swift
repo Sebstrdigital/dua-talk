@@ -9,6 +9,11 @@ struct StructuredTextFormatter: TextFormatter {
         case noChange
     }
 
+    /// Optional embedding-based paragraph splitter.
+    /// When nil (the default), the formatter runs in heuristic-only mode.
+    /// Inject a non-nil value to enable semantic topic-shift detection.
+    var embeddingSplitter: EmbeddingParagraphSplitter? = nil
+
     func format(_ text: String) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty { return ""  }
@@ -222,6 +227,26 @@ struct StructuredTextFormatter: TextFormatter {
             }
         }
 
+        // Check D (embedding augmentation) — consult the embedding splitter for
+        // additional break points that heuristics may have missed.
+        if let splitter = embeddingSplitter, sentences.count >= 2 {
+            let embeddingBreaks = splitter.breakIndices(for: sentences)
+            if !embeddingBreaks.isEmpty {
+                if groups.count == 1 {
+                    // No heuristic splits — build groups entirely from embedding breaks.
+                    groups = groupsFromBreakIndices(embeddingBreaks, sentences: sentences)
+                } else {
+                    // Heuristics already split — merge in embedding breaks without
+                    // removing any existing boundaries.
+                    groups = mergeEmbeddingBreaks(
+                        embeddingBreaks,
+                        into: groups,
+                        sentences: sentences
+                    )
+                }
+            }
+        }
+
         if groups.count >= 2 && groups.count <= 8 && !groups[0].isEmpty {
             return .paragraphs(groups: groups)
         }
@@ -300,6 +325,44 @@ struct StructuredTextFormatter: TextFormatter {
             .filter { !$0.isEmpty }
             .map { $0.joined(separator: " ") }
             .joined(separator: "\n\n")
+    }
+
+    // MARK: - Embedding integration helpers
+
+    /// Converts a sorted list of break indices into `[[String]]` groups.
+    /// A break index `i` means a new group starts at `sentences[i + 1]`.
+    private func groupsFromBreakIndices(_ breakIndices: [Int], sentences: [String]) -> [[String]] {
+        var result: [[String]] = [[]]
+        for (i, sentence) in sentences.enumerated() {
+            result[result.count - 1].append(sentence)
+            if breakIndices.contains(i) && i < sentences.count - 1 {
+                result.append([])
+            }
+        }
+        return result.filter { !$0.isEmpty }
+    }
+
+    /// Merges embedding break indices into an existing set of heuristic groups.
+    /// Only adds new group boundaries — never removes or reorders existing ones.
+    private func mergeEmbeddingBreaks(
+        _ embeddingBreaks: [Int],
+        into heuristicGroups: [[String]],
+        sentences: [String]
+    ) -> [[String]] {
+        // Compute the sentence indices that already act as heuristic boundaries
+        // (i.e. the last sentence index of each group except the last).
+        var heuristicBreaks = Set<Int>()
+        var idx = 0
+        for (g, group) in heuristicGroups.enumerated() {
+            idx += group.count
+            if g < heuristicGroups.count - 1 {
+                heuristicBreaks.insert(idx - 1)
+            }
+        }
+
+        // Union of both break sets, then rebuild groups from scratch.
+        let allBreaks = heuristicBreaks.union(embeddingBreaks).sorted()
+        return groupsFromBreakIndices(allBreaks, sentences: sentences)
     }
 
 }
