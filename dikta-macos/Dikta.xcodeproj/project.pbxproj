@@ -38,6 +38,7 @@
 		100000000000000000000084 /* StructuredTextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000084 /* StructuredTextFormatter.swift */; };
 		100000000000000000000085 /* TextHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000085 /* TextHelpers.swift */; };
 		100000000000000000000086 /* TextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000086 /* TextFormatter.swift */; };
+		100000000000000000000094 /* EmbeddingParagraphSplitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000094 /* EmbeddingParagraphSplitter.swift */; };
 
 		/* ViewModels */
 		100000000000000000000021 /* MenuBarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000021 /* MenuBarViewModel.swift */; };
@@ -67,6 +68,7 @@
 		/* Tests */
 		100000000000000000000071 /* DiktaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000071 /* DiktaTests.swift */; };
 		100000000000000000000073 /* FormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000072 /* FormatterTests.swift */; };
+		100000000000000000000074 /* EmbeddingParagraphSplitterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000074 /* EmbeddingParagraphSplitterTests.swift */; };
 		100000000000000000000072 /* Dikta.app in Frameworks */ = {isa = PBXBuildFile; fileRef = 400000000000000000000001 /* Dikta.app */; };
 /* End PBXBuildFile section */
 
@@ -122,10 +124,12 @@
 		200000000000000000000091 /* SentenceEmbeddingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceEmbeddingService.swift; sourceTree = "<group>"; };
 		200000000000000000000092 /* MiniLML12v2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper.mlpackage; path = MiniLML12v2.mlpackage; sourceTree = "<group>"; };
 		200000000000000000000093 /* minilm-vocab.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "minilm-vocab.txt"; sourceTree = "<group>"; };
+		200000000000000000000094 /* EmbeddingParagraphSplitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddingParagraphSplitter.swift; sourceTree = "<group>"; };
 
 		/* Tests */
 		200000000000000000000071 /* DiktaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiktaTests.swift; sourceTree = "<group>"; };
 		200000000000000000000072 /* FormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatterTests.swift; sourceTree = "<group>"; };
+		200000000000000000000074 /* EmbeddingParagraphSplitterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddingParagraphSplitterTests.swift; sourceTree = "<group>"; };
 
 		/* Product */
 		400000000000000000000001 /* Dikta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Dikta.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -184,6 +188,7 @@
 				200000000000000000000084 /* StructuredTextFormatter.swift */,
 				200000000000000000000085 /* TextHelpers.swift */,
 				200000000000000000000086 /* TextFormatter.swift */,
+				200000000000000000000094 /* EmbeddingParagraphSplitter.swift */,
 			);
 			path = Formatter;
 			sourceTree = "<group>";
@@ -193,6 +198,7 @@
 			children = (
 				200000000000000000000071 /* DiktaTests.swift */,
 				200000000000000000000072 /* FormatterTests.swift */,
+				200000000000000000000074 /* EmbeddingParagraphSplitterTests.swift */,
 			);
 			path = DiktaTests;
 			sourceTree = "<group>";
@@ -392,6 +398,7 @@
 			files = (
 				100000000000000000000071 /* DiktaTests.swift in Sources */,
 				100000000000000000000073 /* FormatterTests.swift in Sources */,
+				100000000000000000000074 /* EmbeddingParagraphSplitterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -431,6 +438,7 @@
 				100000000000000000000085 /* TextHelpers.swift in Sources */,
 				100000000000000000000086 /* TextFormatter.swift in Sources */,
 				100000000000000000000091 /* SentenceEmbeddingService.swift in Sources */,
+				100000000000000000000094 /* EmbeddingParagraphSplitter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
