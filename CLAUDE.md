@@ -32,9 +32,14 @@ open Dikta.xcodeproj        # Development
 ./scripts/build-release.sh   # Release: signed, notarized DMG → build/Dikta.dmg
 ```
 
+## Validation (HARD RULE)
+
+Before and after ANY code change, run the relevant test suite defined in **[docs/validation.md](docs/validation.md)**. Read that file to find the correct test command for the area you're working in. Establish a green baseline BEFORE proposing fixes. Never skip this.
+
 ## Detailed Docs
 
 - **[Architecture](docs/architecture.md)** — Key files, hotkey system, config, menu structure, permissions
+- **[Validation](docs/validation.md)** — Mandatory test runs per code area
 
 ## jCodeMunch
 indexed_commit: c3185a3
