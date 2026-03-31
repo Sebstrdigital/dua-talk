@@ -928,6 +928,24 @@ final class CombinedScenarioTests: XCTestCase {
     func testE04_BulletOptions() { let r = sf.format("For the tech stack we have several options: React with TypeScript, Vue with JavaScript, Angular with TypeScript, and Svelte with TypeScript."); XCTAssertTrue(r.contains("- ")) }
 
     func testE05_TrivialNoChange() { XCTAssertEqual(mf.format("See you at 3pm."), "See you at 3pm.") }
+
+    func testE06_RegressedUserMessage() {
+        let input = "Hello, Regno! So, we have some work to do I guess. There is three things that I want to go through. First things first, there is a new document that we need to take a look at. Second thing, I have some feedback regarding a code review. And the third thing, we need to set a date for when we're going to start working. Okay, so how is life? How are you? How is my mom? Any news about the new car? Okay, have a good day. Best regards, Sebastian."
+        let r = mf.format(input)
+
+        // Greeting must be preserved
+        XCTAssertTrue(r.contains("Hello, Regno!"), "Greeting should be 'Hello, Regno!'")
+
+        // No markdown headings
+        XCTAssertFalse(r.contains("##"), "Output should not contain ## headings")
+
+        // Sign-off preserved
+        XCTAssertTrue(r.contains("Best regards,"), "Sign-off should contain 'Best regards,'")
+        XCTAssertTrue(r.contains("Sebastian"), "Sign-off should contain 'Sebastian'")
+
+        // Paragraph break between work section and personal questions
+        XCTAssertTrue(r.contains("working.\n\nOkay, so how is life?"), "Should have paragraph break between work section and personal questions")
+    }
 }
 
 // =============================================================================
