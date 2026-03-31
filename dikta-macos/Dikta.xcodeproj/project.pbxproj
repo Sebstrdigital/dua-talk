@@ -53,6 +53,9 @@
 		100000000000000000000051 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000051 /* Assets.xcassets */; };
 		100000000000000000000052 /* kokoro_server.py in Resources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000054 /* kokoro_server.py */; };
 		100000000000000000000053 /* setup.sh in Resources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000055 /* setup.sh */; };
+		100000000000000000000091 /* SentenceEmbeddingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000091 /* SentenceEmbeddingService.swift */; };
+		100000000000000000000092 /* MiniLML12v2.mlpackage in Resources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000092 /* MiniLML12v2.mlpackage */; };
+		100000000000000000000093 /* minilm-vocab.txt in Resources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000093 /* minilm-vocab.txt */; };
 
 		/* WhisperKit */
 		100000000000000000000061 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 300000000000000000000001 /* WhisperKit */; };
@@ -116,6 +119,9 @@
 		200000000000000000000053 /* Dikta.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Dikta.entitlements; sourceTree = "<group>"; };
 		200000000000000000000054 /* kokoro_server.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; name = kokoro_server.py; path = ../../kokoro_server.py; sourceTree = "<group>"; };
 		200000000000000000000055 /* setup.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = setup.sh; path = ../../setup.sh; sourceTree = "<group>"; };
+		200000000000000000000091 /* SentenceEmbeddingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceEmbeddingService.swift; sourceTree = "<group>"; };
+		200000000000000000000092 /* MiniLML12v2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper.mlpackage; path = MiniLML12v2.mlpackage; sourceTree = "<group>"; };
+		200000000000000000000093 /* minilm-vocab.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "minilm-vocab.txt"; sourceTree = "<group>"; };
 
 		/* Tests */
 		200000000000000000000071 /* DiktaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiktaTests.swift; sourceTree = "<group>"; };
@@ -221,6 +227,7 @@
 				200000000000000000000027 /* UpdateChecker.swift */,
 				200000000000000000000028 /* DiagnosticLogger.swift */,
 				200000000000000000000029 /* SparkleController.swift */,
+				200000000000000000000091 /* SentenceEmbeddingService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -251,6 +258,8 @@
 				200000000000000000000053 /* Dikta.entitlements */,
 				200000000000000000000054 /* kokoro_server.py */,
 				200000000000000000000055 /* setup.sh */,
+				200000000000000000000092 /* MiniLML12v2.mlpackage */,
+				200000000000000000000093 /* minilm-vocab.txt */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -369,6 +378,8 @@
 				100000000000000000000051 /* Assets.xcassets in Resources */,
 				100000000000000000000052 /* kokoro_server.py in Resources */,
 				100000000000000000000053 /* setup.sh in Resources */,
+				100000000000000000000092 /* MiniLML12v2.mlpackage in Resources */,
+				100000000000000000000093 /* minilm-vocab.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -419,6 +430,7 @@
 				100000000000000000000084 /* StructuredTextFormatter.swift in Sources */,
 				100000000000000000000085 /* TextHelpers.swift in Sources */,
 				100000000000000000000086 /* TextFormatter.swift in Sources */,
+				100000000000000000000091 /* SentenceEmbeddingService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
