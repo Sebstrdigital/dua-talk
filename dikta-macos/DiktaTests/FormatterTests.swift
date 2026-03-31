@@ -102,7 +102,6 @@ struct StructuredTextFormatter: TextFormatter {
     enum ContentType {
         case bulletList(items: [String], preamble: String?)
         case numberedList(items: [String], preamble: String?)
-        case sections(groups: [(heading: String, body: String)])
         case paragraphs(groups: [[String]])
         case noChange
     }
@@ -124,8 +123,6 @@ struct StructuredTextFormatter: TextFormatter {
             return formatBullets(items, preamble: preamble)
         case .numberedList(let items, let preamble):
             return formatNumbered(items, preamble: preamble)
-        case .sections(let groups):
-            return formatSections(groups)
         case .paragraphs(let groups):
             return formatParagraphs(groups)
         case .noChange:
@@ -323,16 +320,6 @@ struct StructuredTextFormatter: TextFormatter {
         }
 
         if groups.count >= 2 && groups.count <= 8 && !groups[0].isEmpty {
-            // Use rich section format when all groups have multiple sentences
-            if groups.allSatisfy({ $0.count >= 2 }) {
-                let sectionGroups = groups.map { group -> (heading: String, body: String) in
-                    let heading = extractHeading(from: group[0])
-                    let body = group.joined(separator: " ")
-                    return (heading: heading, body: body)
-                }
-                return .sections(groups: sectionGroups)
-            }
-            // Otherwise use plain paragraph breaks
             return .paragraphs(groups: groups)
         }
 
@@ -346,34 +333,6 @@ struct StructuredTextFormatter: TextFormatter {
 
         // Check F - No pattern
         return .noChange
-    }
-
-    private func extractHeading(from sentence: String) -> String {
-
-        let skipWords: Set<String> = [
-            "the", "a", "an", "we", "i", "our", "my",
-            "need", "should", "must", "have", "is", "are",
-            "to", "for", "of", "in", "on", "at", "by", "with",
-            "regarding", "as", "also", "however", "additionally",
-            "furthermore", "moreover", "separately", "anyway",
-            "by the way", "on a different note", "on another note",
-            "that said", "moving on"
-        ]
-
-        let words = sentence
-            .trimmingCharacters(in: CharacterSet(charactersIn: ".,!?"))
-            .components(separatedBy: " ")
-
-            .filter { !skipWords.contains($0.lowercased()) }
-
-        let headingWords = Array(words.prefix(2))
-
-        if headingWords.isEmpty { return "Section" }
-
-        return headingWords
-
-            .map { $0.prefix(1).uppercased() + $0.dropFirst() }
-            .joined(separator: " ")
     }
 
     private let sequenceMarkers = [
@@ -431,11 +390,6 @@ struct StructuredTextFormatter: TextFormatter {
         }
         result += steps.joined(separator: "\n")
         return result
-    }
-
-    private func formatSections(_ groups: [(heading: String, body: String)]) -> String {
-        return groups.map { "## \($0.heading)\n\n\($0.body)" }
-                     .joined(separator: "\n\n")
     }
 
     private func formatParagraphs(_ groups: [[String]]) -> String {
@@ -517,8 +471,12 @@ struct MessageFormatter: TextFormatter {
                 let (nameWords, afterName) = captureNameWords(remaining)
                 let originalPhrase = String(text.prefix(phrase.count))
                 if !nameWords.isEmpty {
-                    let nameStr = nameWords.joined(separator: " ")
-                        .trimmingCharacters(in: CharacterSet(charactersIn: ",!"))
+                    let rawNameStr = nameWords.joined(separator: " ")
+                    let nameStr = rawNameStr.trimmingCharacters(in: CharacterSet(charactersIn: ",!"))
+                    // Comma-name-exclamation: "Hello, Reino!" → preserve both comma and exclamation
+                    if terminator == "," && rawNameStr.hasSuffix("!") {
+                        return (originalPhrase + ", " + nameStr + "!", afterName)
+                    }
                     let greetingEnd = terminator == "!" ? "!" : ","
                     return (originalPhrase + " " + nameStr + greetingEnd, afterName)
                 }
@@ -812,6 +770,15 @@ final class BodyParagraphSplittingTests: XCTestCase {
     // --- A12: Misc ---
     func testA39_MixedLongShort() { let r = f.format("I need to tell you about the infrastructure changes we made over the weekend because they affect your deployment pipeline. The DNS records changed. Update your config."); XCTAssertTrue(r.contains("DNS records changed")) }
     func testA40_CasualRambling() { let r = f.format("Yeah so I was thinking about the project. It's going pretty well actually. By the way, the client loved the demo we showed them last week. That was a huge win for us."); XCTAssertTrue(r.contains("By the way") && r.contains("huge win")) }
+
+    // --- A13: Bug regression — no spurious ## headings in topic-shift messages ---
+    func testA41_NoMarkdownHeadingsForTopicShift() {
+        // Reported bug: topic-shift paragraph breaks were formatted as "## So, Some" headings
+        let input = "So, we have some work to do on the project. The backend needs refactoring. We also need to update the tests. Okay, so how is life? Are you doing well? I hope everything is good."
+        let r = f.format(input)
+        XCTAssertFalse(r.contains("##"), "Topic-shift groups must not produce ## headings")
+        XCTAssertGreaterThanOrEqual(r.components(separatedBy: "\n\n").count, 2, "Topic-shift should still produce paragraph breaks")
+    }
 }
 
 // =============================================================================
@@ -872,6 +839,10 @@ final class GreetingSignOffTests: XCTestCase {
     func testC06_HeyNameExclamation() { let r = f.format("Hey Sarah! How's it going? I was wondering if you had time for a call. Talk soon, Mike"); XCTAssertTrue(r.hasPrefix("Hey Sarah!")) }
     func testC07_NoGreeting() { let r = f.format("The report is attached. Please review and let me know. Thanks, Pat"); XCTAssertTrue(r.hasPrefix("The report")) }
     func testC08_HiMultiWordName() { let r = f.format("Hi Sarah Jane, could you send me the latest draft? Best, Tom"); XCTAssertTrue(r.contains("Sarah") && r.contains("Jane")) }
+    func testC21_HelloCommaNameExclamation() { let r = f.format("Hello, Reino! So, we need to discuss the contract. Best, Ana"); XCTAssertTrue(r.hasPrefix("Hello, Reino!"), "Expected 'Hello, Reino!' but got: \(r.components(separatedBy: "\n\n").first ?? r)") }
+    func testC22_HiCommaNameExclamation() { let r = f.format("Hi, John! I wanted to follow up on the proposal. Thanks, Sam"); XCTAssertTrue(r.hasPrefix("Hi, John!"), "Expected 'Hi, John!' but got: \(r.components(separatedBy: "\n\n").first ?? r)") }
+    func testC23_HelloNoCommaNoExclamation() { let r = f.format("Hello Sarah, I wanted to check in about the project. Thanks, Tom"); XCTAssertTrue(r.hasPrefix("Hello Sarah,"), "Expected 'Hello Sarah,' but got: \(r.components(separatedBy: "\n\n").first ?? r)") }
+    func testC24_HelloExclamationNoComma() { let r = f.format("Hello Reino! We need to discuss the contract. Best, Ana"); XCTAssertTrue(r.hasPrefix("Hello Reino!"), "Expected 'Hello Reino!' but got: \(r.components(separatedBy: "\n\n").first ?? r)") }
 
     // --- C2: Opening pleasantry ---
     func testC09_HopeYoureWell() { let r = f.format("Hi, I hope you're doing well. I wanted to discuss the contract. Best, Sam"); XCTAssertTrue(r.contains("hope you're doing well")) }

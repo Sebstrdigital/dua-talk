@@ -66,8 +66,12 @@ struct MessageFormatter: TextFormatter {
                 let (nameWords, afterName) = captureNameWords(remaining)
                 let originalPhrase = String(text.prefix(phrase.count))
                 if !nameWords.isEmpty {
-                    let nameStr = nameWords.joined(separator: " ")
-                        .trimmingCharacters(in: CharacterSet(charactersIn: ",!"))
+                    let rawNameStr = nameWords.joined(separator: " ")
+                    let nameStr = rawNameStr.trimmingCharacters(in: CharacterSet(charactersIn: ",!"))
+                    // Comma-name-exclamation: "Hello, Reino!" → preserve both comma and exclamation
+                    if terminator == "," && rawNameStr.hasSuffix("!") {
+                        return (originalPhrase + ", " + nameStr + "!", afterName)
+                    }
                     let greetingEnd = terminator == "!" ? "!" : ","
                     return (originalPhrase + " " + nameStr + greetingEnd, afterName)
                 }
