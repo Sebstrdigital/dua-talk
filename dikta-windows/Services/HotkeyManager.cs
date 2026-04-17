@@ -20,6 +20,28 @@ public class HotkeyManager : IDisposable
 
     public event Action? HotkeyPressed;
 
+    /// <summary>
+    /// Raised when the first instance receives the DiktaShowOnboarding broadcast from a second
+    /// instance that tried to start. Full foreground activation is handled in F-4; here we just
+    /// surface the signal.
+    /// </summary>
+    public event Action? ShowOnboardingRequested;
+
+    private uint _showOnboardingMsg;
+
+    /// <summary>
+    /// Raised when startup hotkey registration fails (e.g. the key combo is already claimed by
+    /// another app). Fired during construction — subscribers added after construction will not
+    /// receive the initial event; use <see cref="RegistrationFailedOnStartup"/> instead.
+    /// </summary>
+    public event Action? RegistrationFailed;
+
+    /// <summary>
+    /// True when the hotkey could not be registered at startup. Checked by TrayIconManager
+    /// after construction so it can surface a balloon even though it wasn't subscribed yet.
+    /// </summary>
+    public bool RegistrationFailedOnStartup { get; private set; }
+
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
 
@@ -59,6 +81,8 @@ public class HotkeyManager : IDisposable
         {
             var error = Marshal.GetLastWin32Error();
             System.Diagnostics.Debug.WriteLine($"RegisterHotKey failed with error code: {error}");
+            RegistrationFailedOnStartup = true;
+            RegistrationFailed?.Invoke();
         }
         else
         {
@@ -107,6 +131,16 @@ public class HotkeyManager : IDisposable
         };
     }
 
+    /// <summary>
+    /// Registers an application-defined window message (obtained via RegisterWindowMessage)
+    /// so the existing HwndHook routes it to <see cref="ShowOnboardingRequested"/>.
+    /// Call once from App.OnStartup after the first-instance check passes.
+    /// </summary>
+    public void RegisterExternalMessage(uint messageId)
+    {
+        _showOnboardingMsg = messageId;
+    }
+
     public void ReregisterHotkey(string modifiers, string key)
     {
         if (_source == null) return;
@@ -134,6 +168,13 @@ public class HotkeyManager : IDisposable
         if (msg == WM_HOTKEY && wParam.ToInt32() == HOTKEY_ID)
         {
             HotkeyPressed?.Invoke();
+            handled = true;
+        }
+        else if (_showOnboardingMsg != 0 && (uint)msg == _showOnboardingMsg)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                "[Dikta] First instance received DiktaShowOnboarding via HwndHook.");
+            ShowOnboardingRequested?.Invoke();
             handled = true;
         }
         return IntPtr.Zero;
