@@ -294,6 +294,8 @@ public class TrayIconManager : IDisposable
         {
             if (_onboardingWindow != null)
             {
+                if (_onboardingWindow.WindowState == System.Windows.WindowState.Minimized)
+                    _onboardingWindow.WindowState = System.Windows.WindowState.Normal;
                 _onboardingWindow.Activate();
                 return;
             }
