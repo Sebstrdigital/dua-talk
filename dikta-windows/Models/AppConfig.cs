@@ -18,4 +18,10 @@ public class AppConfig
 
     [JsonPropertyName("mute_sounds")]
     public bool MuteSounds { get; set; } = false;
+
+    [JsonPropertyName("mic_sensitivity")]
+    public MicSensitivity Sensitivity { get; set; } = MicSensitivity.Normal;
+
+    [JsonPropertyName("show_on_startup")]
+    public bool ShowOnStartup { get; set; } = true;
 }

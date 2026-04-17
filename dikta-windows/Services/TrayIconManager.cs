@@ -22,6 +22,7 @@ public class TrayIconManager : IDisposable
     private bool _isRecording;
     private int _processingFlag; // 0 = idle, 1 = processing; guarded via Interlocked
     private SettingsWindow? _settingsWindow;
+    private OnboardingWindow? _onboardingWindow;
 
     public TrayIconManager(ConfigService configService, HotkeyManager hotkeyManager)
     {
@@ -48,6 +49,7 @@ public class TrayIconManager : IDisposable
         };
 
         _hotkeyManager.HotkeyPressed += OnHotkeyPressed;
+        _hotkeyManager.ShowOnboardingRequested += OpenOnboarding;
         _configService.SaveFailed += OnConfigSaveFailed;
 
         if (_configService.WasReset)
@@ -79,6 +81,11 @@ public class TrayIconManager : IDisposable
     private ContextMenuStrip BuildContextMenu()
     {
         var menu = new ContextMenuStrip();
+
+        // About
+        menu.Items.Add("About", null, (s, e) => OpenOnboarding());
+
+        menu.Items.Add(new ToolStripSeparator());
 
         // History submenu
         var historyMenu = new ToolStripMenuItem("History");
@@ -281,8 +288,26 @@ public class TrayIconManager : IDisposable
         });
     }
 
+    public void OpenOnboarding()
+    {
+        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        {
+            if (_onboardingWindow != null)
+            {
+                if (_onboardingWindow.WindowState == System.Windows.WindowState.Minimized)
+                    _onboardingWindow.WindowState = System.Windows.WindowState.Normal;
+                _onboardingWindow.Activate();
+                return;
+            }
+            _onboardingWindow = new OnboardingWindow(_configService);
+            _onboardingWindow.Closed += (s, e) => _onboardingWindow = null;
+            _onboardingWindow.Show();
+        });
+    }
+
     public void Dispose()
     {
+        _hotkeyManager.ShowOnboardingRequested -= OpenOnboarding;
         _configService.SaveFailed -= OnConfigSaveFailed;
         _notifyIcon?.Dispose();
         _idleIcon?.Dispose();

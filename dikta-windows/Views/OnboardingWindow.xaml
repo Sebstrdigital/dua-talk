@@ -1,0 +1,58 @@
+<Window x:Class="DiktaWindows.Views.OnboardingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Welcome to Dikta"
+        Width="480" Height="360"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="ToolWindow">
+    <Grid Margin="24,20,24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="16"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="16"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- App title + version -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
+            <TextBlock Text="Dikta" FontSize="22" FontWeight="Bold"/>
+            <TextBlock x:Name="VersionLabel" FontSize="13" Foreground="Gray"
+                       VerticalAlignment="Bottom" Margin="8,0,0,2"/>
+        </StackPanel>
+
+        <!-- Hotkey row -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal">
+            <TextBlock Text="Hotkey:" FontSize="13" FontWeight="SemiBold" Width="120" VerticalAlignment="Center"/>
+            <TextBlock x:Name="HotkeyLabel" FontSize="13" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Microphone permission row -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal">
+            <TextBlock Text="Microphone access:" FontSize="13" FontWeight="SemiBold" Width="120" VerticalAlignment="Center"/>
+            <TextBlock x:Name="MicStatusLabel" FontSize="13" VerticalAlignment="Center"/>
+            <Button x:Name="GrantButton"
+                    Content="Grant access"
+                    FontSize="12"
+                    Height="26" Padding="10,0"
+                    Margin="12,0,0,0"
+                    Visibility="Collapsed"
+                    Click="GrantButton_Click"/>
+        </StackPanel>
+
+        <!-- Separator -->
+        <Separator Grid.Row="6"/>
+
+        <!-- Don't show on startup checkbox -->
+        <CheckBox Grid.Row="8"
+                  x:Name="DontShowCheckBox"
+                  Content="Don't show on startup"
+                  FontSize="12"
+                  VerticalAlignment="Bottom"/>
+    </Grid>
+</Window>
