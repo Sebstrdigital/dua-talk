@@ -78,7 +78,7 @@ public partial class SettingsWindow : Window
 
     private void PopulateLanguageCombo()
     {
-        foreach (var lang in Language.All)
+        foreach (var lang in DiktaWindows.Models.Language.All)
         {
             LanguageCombo.Items.Add(new ComboBoxItem
             {

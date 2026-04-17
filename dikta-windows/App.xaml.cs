@@ -60,7 +60,7 @@ public partial class App : Application
                     $"[Dikta] Second-instance detected — broadcast WM {showMsg} (DiktaShowOnboarding).");
             }
 
-            _singleInstanceMutex.Dispose();
+            _singleInstanceMutex?.Dispose();
             _singleInstanceMutex = null;
             Shutdown();
             return;
