@@ -189,15 +189,25 @@ public partial class SettingsWindow : Window
             return;
         }
 
+        _saved = true;
         Close();
     }
 
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
-        // If user changed the hotkey via the dialog but then cancels Settings,
-        // the dialog already re-registered the new binding — restore the persisted one.
-        if (_pendingModifiers != _configService.Config.HotkeyModifiers ||
-            _pendingKey != _configService.Config.HotkeyKey)
+        // Close() will fire OnWindowClosing which handles the restore.
+        Close();
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        // Covers every close path: Cancel button, title-bar X, Alt+F4, system menu.
+        // If user changed the hotkey via the dialog but never saved, the dialog's
+        // pre-save test already re-registered the new binding — restore the persisted one
+        // to keep runtime + config in sync.
+        if (!_saved &&
+            (_pendingModifiers != _configService.Config.HotkeyModifiers ||
+             _pendingKey != _configService.Config.HotkeyKey))
         {
             try
             {
@@ -208,6 +218,8 @@ public partial class SettingsWindow : Window
             catch { /* best-effort restore */ }
         }
 
-        Close();
+        base.OnClosing(e);
     }
+
+    private bool _saved;
 }
