@@ -288,7 +288,7 @@ public class TrayIconManager : IDisposable
         });
     }
 
-    private void OpenOnboarding()
+    public void OpenOnboarding()
     {
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {

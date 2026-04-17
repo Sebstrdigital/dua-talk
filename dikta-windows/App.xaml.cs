@@ -111,7 +111,9 @@ public partial class App : Application
 
         if (_configService.Config.ShowOnStartup)
         {
-            new OnboardingWindow(_configService).Show();
+            // Route through TrayIconManager so the single-window guard tracks this instance.
+            // Otherwise tray "About" would open a duplicate modal while the startup one is still visible.
+            _trayIcon.OpenOnboarding();
         }
     }
 
