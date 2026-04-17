@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Media;
+using NAudio.Wave;
 using DiktaWindows.Services;
 
 namespace DiktaWindows.Views;
@@ -9,7 +10,6 @@ namespace DiktaWindows.Views;
 public partial class OnboardingWindow : Window
 {
     private readonly ConfigService _configService;
-    private bool _dontShowOnStartup;
 
     public OnboardingWindow(ConfigService configService)
     {
@@ -18,7 +18,24 @@ public partial class OnboardingWindow : Window
 
         LoadVersion();
         LoadHotkey();
-        LoadMicStatus();
+        RefreshMicStatus();
+
+        // "Don't show on startup" checked  ↔  ShowOnStartup = false
+        DontShowCheckBox.IsChecked = !_configService.Config.ShowOnStartup;
+
+        Closing += OnWindowClosing;
+        Activated += OnWindowActivated;
+    }
+
+    private void OnWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        _configService.Config.ShowOnStartup = !(DontShowCheckBox.IsChecked ?? false);
+        _configService.Save();
+    }
+
+    private void OnWindowActivated(object? sender, EventArgs e)
+    {
+        RefreshMicStatus();
     }
 
     private void LoadVersion()
@@ -43,11 +60,22 @@ public partial class OnboardingWindow : Window
         HotkeyLabel.Text = string.Join(" + ", parts);
     }
 
-    private void LoadMicStatus()
+    private void RefreshMicStatus()
     {
-        // Placeholder — US-007 will add refresh logic and the Activated handler.
-        MicStatusLabel.Text = "\u2014";
-        GrantButton.Visibility = Visibility.Collapsed;
+        int deviceCount = WaveIn.DeviceCount;
+
+        if (deviceCount == 0)
+        {
+            MicStatusLabel.Text = "Not granted";
+            MicStatusLabel.Foreground = Brushes.Red;
+            GrantButton.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            MicStatusLabel.Text = "Granted";
+            MicStatusLabel.Foreground = Brushes.Green;
+            GrantButton.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void GrantButton_Click(object sender, RoutedEventArgs e)

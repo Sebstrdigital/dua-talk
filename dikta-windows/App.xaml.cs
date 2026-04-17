@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using DiktaWindows.Services;
+using DiktaWindows.Views;
 
 namespace DiktaWindows;
 
@@ -106,6 +107,11 @@ public partial class App : Application
         }
 
         _trayIcon.Initialize();
+
+        if (_configService.Config.ShowOnStartup)
+        {
+            new OnboardingWindow(_configService).Show();
+        }
     }
 
     private static void WriteCrashLog(Exception ex)
