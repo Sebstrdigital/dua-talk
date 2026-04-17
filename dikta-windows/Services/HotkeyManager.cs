@@ -20,6 +20,28 @@ public class HotkeyManager : IDisposable
 
     public event Action? HotkeyPressed;
 
+    /// <summary>
+    /// Raised when the first instance receives the DiktaShowOnboarding broadcast from a second
+    /// instance that tried to start. Full foreground activation is handled in F-4; here we just
+    /// surface the signal.
+    /// </summary>
+    public event Action? ShowOnboardingRequested;
+
+    private uint _showOnboardingMsg;
+
+    /// <summary>
+    /// Raised when startup hotkey registration fails (e.g. the key combo is already claimed by
+    /// another app). Fired during construction — subscribers added after construction will not
+    /// receive the initial event; use <see cref="RegistrationFailedOnStartup"/> instead.
+    /// </summary>
+    public event Action? RegistrationFailed;
+
+    /// <summary>
+    /// True when the hotkey could not be registered at startup. Checked by TrayIconManager
+    /// after construction so it can surface a balloon even though it wasn't subscribed yet.
+    /// </summary>
+    public bool RegistrationFailedOnStartup { get; private set; }
+
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
 
@@ -59,6 +81,8 @@ public class HotkeyManager : IDisposable
         {
             var error = Marshal.GetLastWin32Error();
             System.Diagnostics.Debug.WriteLine($"RegisterHotKey failed with error code: {error}");
+            RegistrationFailedOnStartup = true;
+            RegistrationFailed?.Invoke();
         }
         else
         {
@@ -94,17 +118,78 @@ public class HotkeyManager : IDisposable
 
     private static uint ParseKey(string key)
     {
+        if (string.IsNullOrWhiteSpace(key))
+            return 0;
+
+        // Single alphanumeric character — map directly to VK code (A-Z / 0-9).
         if (key.Length == 1 && char.IsLetterOrDigit(key[0]))
             return (uint)char.ToUpperInvariant(key[0]);
 
+        // Named keys — case-insensitive.
         return key.ToUpperInvariant() switch
         {
-            "SPACE" => 0x20,
-            "ENTER" => 0x0D,
-            "TAB" => 0x09,
-            "ESCAPE" => 0x1B,
-            _ => (uint)char.ToUpperInvariant(key[0])
+            // Function keys F1–F12
+            "F1"  => 0x70,
+            "F2"  => 0x71,
+            "F3"  => 0x72,
+            "F4"  => 0x73,
+            "F5"  => 0x74,
+            "F6"  => 0x75,
+            "F7"  => 0x76,
+            "F8"  => 0x77,
+            "F9"  => 0x78,
+            "F10" => 0x79,
+            "F11" => 0x7A,
+            "F12" => 0x7B,
+
+            // Arrow keys
+            "LEFT"  => 0x25,
+            "UP"    => 0x26,
+            "RIGHT" => 0x27,
+            "DOWN"  => 0x28,
+
+            // Navigation keys
+            "HOME"     => 0x24,
+            "END"      => 0x23,
+            "PAGEUP"   => 0x21,
+            "PAGEDOWN" => 0x22,
+            "INSERT"   => 0x2D,
+            "DELETE"   => 0x2E,
+
+            // Editing / whitespace keys
+            "BACKSPACE" => 0x08,
+            "TAB"       => 0x09,
+            "ENTER"     => 0x0D,
+            "RETURN"    => 0x0D,
+            "ESCAPE"    => 0x1B,
+            "ESC"       => 0x1B,
+            "SPACE"     => 0x20,
+
+            // OEM / punctuation keys (US layout)
+            "."  => 0xBE, // VK_OEM_PERIOD
+            ","  => 0xBC, // VK_OEM_COMMA
+            ";"  => 0xBA, // VK_OEM_1
+            "'"  => 0xDE, // VK_OEM_7
+            "["  => 0xDB, // VK_OEM_4
+            "]"  => 0xDD, // VK_OEM_6
+            "-"  => 0xBD, // VK_OEM_MINUS
+            "="  => 0xBB, // VK_OEM_PLUS
+            "/"  => 0xBF, // VK_OEM_2
+            "\\" => 0xDC, // VK_OEM_5
+
+            // Unknown key name → 0 so the caller can surface a readable error.
+            _ => 0
         };
+    }
+
+    /// <summary>
+    /// Registers an application-defined window message (obtained via RegisterWindowMessage)
+    /// so the existing HwndHook routes it to <see cref="ShowOnboardingRequested"/>.
+    /// Call once from App.OnStartup after the first-instance check passes.
+    /// </summary>
+    public void RegisterExternalMessage(uint messageId)
+    {
+        _showOnboardingMsg = messageId;
     }
 
     public void ReregisterHotkey(string modifiers, string key)
@@ -134,6 +219,13 @@ public class HotkeyManager : IDisposable
         if (msg == WM_HOTKEY && wParam.ToInt32() == HOTKEY_ID)
         {
             HotkeyPressed?.Invoke();
+            handled = true;
+        }
+        else if (_showOnboardingMsg != 0 && (uint)msg == _showOnboardingMsg)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                "[Dikta] First instance received DiktaShowOnboarding via HwndHook.");
+            ShowOnboardingRequested?.Invoke();
             handled = true;
         }
         return IntPtr.Zero;

@@ -9,12 +9,14 @@ public class ModelDownloader
     private const string BaseUrl = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/";
 
     // Expected model sizes in bytes (with 1% tolerance)
-    private static readonly Dictionary<string, long> ExpectedModelSizes = new()
+    private static readonly Dictionary<string, long> _expectedModelSizes = new()
     {
         { "small", 511_705_088 },      // 488 MB
         { "medium", 1_606_632_448 },   // 1533 MB
         { "large", 3_244_867_584 }     // 3095 MB
     };
+
+    public static IReadOnlyDictionary<string, long> ExpectedModelSizes => _expectedModelSizes;
 
     public async Task DownloadModelAsync(
         string modelName,
@@ -70,7 +72,7 @@ public class ModelDownloader
 
     private void ValidateModelFile(string modelName, string filePath)
     {
-        if (!ExpectedModelSizes.TryGetValue(modelName, out var expectedSize))
+        if (!_expectedModelSizes.TryGetValue(modelName, out var expectedSize))
             throw new ArgumentException($"Unknown model size: {modelName}");
 
         var fileInfo = new FileInfo(filePath);

@@ -78,7 +78,7 @@ public partial class SettingsWindow : Window
 
     private void PopulateLanguageCombo()
     {
-        foreach (var lang in Language.All)
+        foreach (var lang in DiktaWindows.Models.Language.All)
         {
             LanguageCombo.Items.Add(new ComboBoxItem
             {
@@ -142,7 +142,22 @@ public partial class SettingsWindow : Window
         if (ModelCombo.SelectedItem is ComboBoxItem modelItem)
             _configService.Config.WhisperModel = modelItem.Tag?.ToString() ?? _configService.Config.WhisperModel;
 
+        Exception? saveError = null;
+        void OnSaveFailed(Exception ex) => saveError = ex;
+
+        _configService.SaveFailed += OnSaveFailed;
         _configService.Save();
+        _configService.SaveFailed -= OnSaveFailed;
+
+        if (saveError is not null)
+        {
+            MessageBox.Show(
+                $"Settings could not be saved:\n{saveError.Message}",
+                "Dikta — Save Failed",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            return;
+        }
 
         Close();
     }
