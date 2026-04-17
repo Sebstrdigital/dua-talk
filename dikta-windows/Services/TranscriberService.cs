@@ -43,10 +43,12 @@ public class TranscriberService : IDisposable
         try
         {
             var language = Language.FromCode(_configService.Config.Language).WhisperCode;
+            var noSpeechThreshold = _configService.Config.Sensitivity.NoSpeechThreshold();
 
             // Build a fresh processor each call so language/sensitivity settings are applied.
             using var processor = _factory.CreateBuilder()
                 .WithLanguage(language)
+                .WithNoSpeechThreshold(noSpeechThreshold)
                 .Build();
 
             using var fileStream = File.OpenRead(audioFilePath);
