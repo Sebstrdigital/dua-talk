@@ -5,9 +5,13 @@ using Whisper.net;
 
 namespace DiktaWindows.Services;
 
-public class TranscriberService
+public class TranscriberService : IDisposable
 {
     private readonly ConfigService _configService;
+
+    // Cached factory — reused across transcriptions when the model path is unchanged.
+    private WhisperFactory? _factory;
+    private string? _cachedModelPath;
 
     public TranscriberService(ConfigService configService)
     {
@@ -21,13 +25,27 @@ public class TranscriberService
         if (!File.Exists(modelPath))
             throw new FileNotFoundException($"Whisper model not found at {modelPath}. Please download the model first.");
 
+        // Invalidate cached factory if the model path has changed (e.g. user switched model in Settings).
+        if (_factory != null && _cachedModelPath != modelPath)
+        {
+            _factory.Dispose();
+            _factory = null;
+            _cachedModelPath = null;
+        }
+
+        // Load from disk only on first transcription or after a model-path change.
+        if (_factory == null)
+        {
+            _factory = WhisperFactory.FromPath(modelPath);
+            _cachedModelPath = modelPath;
+        }
+
         try
         {
-            using var factory = WhisperFactory.FromPath(modelPath);
-
             var language = Language.FromCode(_configService.Config.Language).WhisperCode;
 
-            using var processor = factory.CreateBuilder()
+            // Build a fresh processor each call so language/sensitivity settings are applied.
+            using var processor = _factory.CreateBuilder()
                 .WithLanguage(language)
                 .Build();
 
@@ -68,5 +86,12 @@ public class TranscriberService
     public bool IsModelAvailable()
     {
         return File.Exists(GetModelPath());
+    }
+
+    public void Dispose()
+    {
+        _factory?.Dispose();
+        _factory = null;
+        _cachedModelPath = null;
     }
 }

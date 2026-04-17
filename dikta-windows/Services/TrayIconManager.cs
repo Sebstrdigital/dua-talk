@@ -48,9 +48,19 @@ public class TrayIconManager : IDisposable
         };
 
         _hotkeyManager.HotkeyPressed += OnHotkeyPressed;
+        _configService.SaveFailed += OnConfigSaveFailed;
 
         if (_configService.WasReset)
             _notifyIcon.ShowBalloonTip(3000, "Dikta", "Config was unreadable — reset to defaults.", ToolTipIcon.Warning);
+
+        // Surface hotkey registration failure that occurred during HotkeyManager construction
+        // (before TrayIconManager existed). The tray icon is now visible, so the balloon can show.
+        if (_hotkeyManager.RegistrationFailedOnStartup)
+            _notifyIcon.ShowBalloonTip(
+                4000,
+                "Dikta — Hotkey Unavailable",
+                "The dictation hotkey is in use by another app. Open Settings to choose a different one.",
+                ToolTipIcon.Warning);
     }
 
     private string BuildTooltip()
@@ -173,8 +183,14 @@ public class TrayIconManager : IDisposable
                 // Start recording
                 if (!_transcriber.IsModelAvailable())
                 {
+                    var modelName = _configService.Config.WhisperModel;
+                    var sizeBytes = ModelDownloader.ExpectedModelSizes[modelName];
+                    var sizeDisplay = sizeBytes >= 1_073_741_824
+                        ? (sizeBytes / 1_073_741_824.0).ToString("F1") + " GB"
+                        : (sizeBytes / 1_048_576.0).ToString("F0") + " MB";
+
                     var result = System.Windows.MessageBox.Show(
-                        "The Whisper model is not downloaded yet.\n\nDownload model now? (~150 MB)",
+                        $"The Whisper model is not downloaded yet.\n\nDownload model now? (~{sizeDisplay})",
                         "Dikta — Download Model",
                         System.Windows.MessageBoxButton.YesNo,
                         System.Windows.MessageBoxImage.Question);
@@ -183,7 +199,6 @@ public class TrayIconManager : IDisposable
                         return;
 
                     _processing = true;
-                    var modelName = _configService.Config.WhisperModel;
                     var destPath = System.IO.Path.Combine(ConfigService.ModelsDir, $"ggml-{modelName}.bin");
                     bool downloadSucceeded = false;
 
@@ -239,6 +254,15 @@ public class TrayIconManager : IDisposable
         }
     }
 
+    private void OnConfigSaveFailed(Exception ex)
+    {
+        _notifyIcon?.ShowBalloonTip(
+            4000,
+            "Dikta — Settings Not Saved",
+            $"Could not write settings: {ex.Message}",
+            ToolTipIcon.Error);
+    }
+
     private void OpenSettings()
     {
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -256,6 +280,7 @@ public class TrayIconManager : IDisposable
 
     public void Dispose()
     {
+        _configService.SaveFailed -= OnConfigSaveFailed;
         _notifyIcon?.Dispose();
         _idleIcon?.Dispose();
         _recordingIcon?.Dispose();
