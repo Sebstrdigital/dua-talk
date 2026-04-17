@@ -31,10 +31,23 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         // Single-instance guard: acquire named mutex before creating any windows.
-        _singleInstanceMutex = new Mutex(
-            initiallyOwned: true,
-            name: MutexName,
-            out bool createdNew);
+        // An AbandonedMutexException is thrown when the previous owner crashed while
+        // holding the mutex. The exception itself signals that we now own the mutex,
+        // so we treat it the same as createdNew=true and continue startup normally.
+        bool createdNew;
+        try
+        {
+            _singleInstanceMutex = new Mutex(
+                initiallyOwned: true,
+                name: MutexName,
+                out createdNew);
+        }
+        catch (AbandonedMutexException ex)
+        {
+            // Previous instance crashed while holding the mutex. We now own it.
+            _singleInstanceMutex = ex.Mutex;
+            createdNew = true;
+        }
 
         if (!createdNew)
         {
