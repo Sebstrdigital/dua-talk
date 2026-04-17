@@ -5,9 +5,11 @@ namespace DiktaWindows.Services;
 
 public static class ClipboardManager
 {
-    private const ushort VK_CONTROL = 0x11;
+    private const ushort VK_LCONTROL = 0xA2;
     private const ushort VK_V = 0x56;
     private const uint KEYEVENTF_KEYUP = 0x0002;
+    private const uint KEYEVENTF_SCANCODE = 0x0008;
+    private const uint MAPVK_VK_TO_VSC = 0;
     private const int INPUT_KEYBOARD = 1;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -57,6 +59,9 @@ public static class ClipboardManager
     [DllImport("user32.dll", SetLastError = true)]
     private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 
+    [DllImport("user32.dll")]
+    private static extern uint MapVirtualKey(uint uCode, uint uMapType);
+
     public static async Task CopyAndPasteAsync(string text)
     {
         // Set clipboard on UI thread using WinForms clipboard (avoids CLIPBRD_E_CANT_OPEN)
@@ -68,24 +73,36 @@ public static class ClipboardManager
         // Brief delay to ensure clipboard is ready
         await Task.Delay(50);
 
-        // Simulate Ctrl+V atomically via SendInput
+        // Simulate Ctrl+V atomically via SendInput.
+        // Use VK_LCONTROL (left Ctrl) so apps that track left/right modifier keys see the
+        // correct extended key. Populate wScan via MapVirtualKey so apps that inspect scan
+        // codes (Outlook, Teams, some browser address bars) accept the event. If
+        // MapVirtualKey returns 0 for either key we fall back to virtual-key-only (no
+        // KEYEVENTF_SCANCODE), which preserves the original behaviour.
         var inputs = new INPUT[4];
+
+        ushort scanCtrl = (ushort)MapVirtualKey(VK_LCONTROL, MAPVK_VK_TO_VSC);
+        ushort scanV    = (ushort)MapVirtualKey(VK_V,        MAPVK_VK_TO_VSC);
+        bool useScanCode = scanCtrl != 0 && scanV != 0;
+
+        uint flagsScancode     = useScanCode ? KEYEVENTF_SCANCODE           : 0u;
+        uint flagsScancodeUp   = useScanCode ? KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP : KEYEVENTF_KEYUP;
 
         // Ctrl down
         inputs[0].type = INPUT_KEYBOARD;
-        inputs[0].u.ki = new KEYBDINPUT { wVk = VK_CONTROL };
+        inputs[0].u.ki = new KEYBDINPUT { wVk = VK_LCONTROL, wScan = scanCtrl, dwFlags = flagsScancode };
 
         // V down
         inputs[1].type = INPUT_KEYBOARD;
-        inputs[1].u.ki = new KEYBDINPUT { wVk = VK_V };
+        inputs[1].u.ki = new KEYBDINPUT { wVk = VK_V, wScan = scanV, dwFlags = flagsScancode };
 
         // V up
         inputs[2].type = INPUT_KEYBOARD;
-        inputs[2].u.ki = new KEYBDINPUT { wVk = VK_V, dwFlags = KEYEVENTF_KEYUP };
+        inputs[2].u.ki = new KEYBDINPUT { wVk = VK_V, wScan = scanV, dwFlags = flagsScancodeUp };
 
         // Ctrl up
         inputs[3].type = INPUT_KEYBOARD;
-        inputs[3].u.ki = new KEYBDINPUT { wVk = VK_CONTROL, dwFlags = KEYEVENTF_KEYUP };
+        inputs[3].u.ki = new KEYBDINPUT { wVk = VK_LCONTROL, wScan = scanCtrl, dwFlags = flagsScancodeUp };
 
         SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<INPUT>());
     }
