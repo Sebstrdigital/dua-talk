@@ -22,6 +22,7 @@ public class TrayIconManager : IDisposable
     private bool _isRecording;
     private int _processingFlag; // 0 = idle, 1 = processing; guarded via Interlocked
     private SettingsWindow? _settingsWindow;
+    private OnboardingWindow? _onboardingWindow;
 
     public TrayIconManager(ConfigService configService, HotkeyManager hotkeyManager)
     {
@@ -79,6 +80,11 @@ public class TrayIconManager : IDisposable
     private ContextMenuStrip BuildContextMenu()
     {
         var menu = new ContextMenuStrip();
+
+        // About
+        menu.Items.Add("About", null, (s, e) => OpenOnboarding());
+
+        menu.Items.Add(new ToolStripSeparator());
 
         // History submenu
         var historyMenu = new ToolStripMenuItem("History");
@@ -278,6 +284,21 @@ public class TrayIconManager : IDisposable
             _settingsWindow = new SettingsWindow(_configService, _hotkeyManager);
             _settingsWindow.Closed += (s, e) => _settingsWindow = null;
             _settingsWindow.Show();
+        });
+    }
+
+    private void OpenOnboarding()
+    {
+        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        {
+            if (_onboardingWindow != null)
+            {
+                _onboardingWindow.Activate();
+                return;
+            }
+            _onboardingWindow = new OnboardingWindow(_configService);
+            _onboardingWindow.Closed += (s, e) => _onboardingWindow = null;
+            _onboardingWindow.Show();
         });
     }
 
