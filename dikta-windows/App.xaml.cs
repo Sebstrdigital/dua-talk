@@ -99,11 +99,12 @@ public partial class App : Application
         _trayIcon = new TrayIconManager(_configService, _hotkeyManager);
 
         // Wire cross-instance "show onboarding" signal to the HotkeyManager listener.
+        // TrayIconManager subscribes to ShowOnboardingRequested in its Initialize() — see
+        // dikta-windows/Services/TrayIconManager.cs — which opens/activates the OnboardingWindow.
         uint showOnboardingMsg = RegisterWindowMessage("DiktaShowOnboarding");
         if (showOnboardingMsg != 0)
         {
             _hotkeyManager.RegisterExternalMessage(showOnboardingMsg);
-            _hotkeyManager.ShowOnboardingRequested += OnShowOnboardingRequested;
         }
 
         _trayIcon.Initialize();
@@ -146,13 +147,6 @@ public partial class App : Application
         {
             // Best-effort: tray may not be initialised yet for very early crashes.
         }
-    }
-
-    private void OnShowOnboardingRequested()
-    {
-        System.Diagnostics.Debug.WriteLine(
-            "[Dikta] First instance received DiktaShowOnboarding broadcast.");
-        // Full foreground activation is handled in F-4. Nothing more needed here.
     }
 
     protected override void OnExit(ExitEventArgs e)
