@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using DiktaWindows.Services;
 
 namespace DiktaWindows.Views;
 
@@ -13,8 +14,21 @@ public partial class HotkeyRecordingWindow : Window
     public string CapturedModifiers { get; private set; } = "";
     public string CapturedKey { get; private set; } = "";
 
-    public HotkeyRecordingWindow()
+    private readonly HotkeyManager _hotkeyManager;
+
+    // OS-reserved combinations that must never be offered as user-configurable hotkeys.
+    private static readonly (ModifierKeys Mods, Key Key)[] ReservedCombos =
     {
+        (ModifierKeys.Windows, Key.L),
+        (ModifierKeys.Windows, Key.D),
+        (ModifierKeys.Windows, Key.Tab),
+        (ModifierKeys.Control, Key.Escape),
+        (ModifierKeys.Control | ModifierKeys.Alt, Key.Delete),
+    };
+
+    public HotkeyRecordingWindow(HotkeyManager hotkeyManager)
+    {
+        _hotkeyManager = hotkeyManager;
         InitializeComponent();
         this.PreviewKeyDown += OnPreviewKeyDown;
     }
@@ -55,16 +69,22 @@ public partial class HotkeyRecordingWindow : Window
 
         UpdatePreview(_mods, _key);
 
-        if (_mods != ModifierKeys.None)
-        {
-            OkButton.IsEnabled = true;
-            StatusLabel.Text = "";
-        }
-        else
+        if (_mods == ModifierKeys.None)
         {
             OkButton.IsEnabled = false;
             StatusLabel.Text = "At least one modifier (Ctrl, Shift, Alt, Win) is required.";
+            return;
         }
+
+        if (IsReservedCombo(_mods, _key))
+        {
+            OkButton.IsEnabled = false;
+            StatusLabel.Text = "This combination is reserved by Windows. Choose a different one.";
+            return;
+        }
+
+        OkButton.IsEnabled = true;
+        StatusLabel.Text = "";
     }
 
     // ---------------------------------------------------------------------------
@@ -73,8 +93,22 @@ public partial class HotkeyRecordingWindow : Window
 
     private void OkButton_Click(object sender, RoutedEventArgs e)
     {
-        CapturedModifiers = FormatModifiersForConfig(_mods);
-        CapturedKey = FormatKey(_key);
+        var modString = FormatModifiersForConfig(_mods);
+        var keyString = FormatKey(_key);
+
+        try
+        {
+            _hotkeyManager.ReregisterHotkey(modString, keyString);
+        }
+        catch (InvalidOperationException ex)
+        {
+            StatusLabel.Text = ex.Message;
+            OkButton.IsEnabled = false;
+            return;
+        }
+
+        CapturedModifiers = modString;
+        CapturedKey = keyString;
         DialogResult = true;
         Close();
     }
@@ -88,6 +122,16 @@ public partial class HotkeyRecordingWindow : Window
     // ---------------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------------
+
+    private static bool IsReservedCombo(ModifierKeys mods, Key key)
+    {
+        foreach (var (reservedMods, reservedKey) in ReservedCombos)
+        {
+            if (mods == reservedMods && key == reservedKey)
+                return true;
+        }
+        return false;
+    }
 
     private static bool IsModifierOnly(Key key) => key is
         Key.LeftCtrl or Key.RightCtrl or
