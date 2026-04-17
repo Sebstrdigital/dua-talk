@@ -68,18 +68,19 @@ namespace DiktaWindows.Services
 
         private static void RotateFiles()
         {
-            // Walk from the oldest slot downward so we never clobber a file
-            // before it has been moved.
-            for (int i = MaxFiles - 1; i >= 0; i--)
+            // Delete the oldest slot entirely — it would otherwise exceed the retention count.
+            string oldest = Path.Combine(_logDir, $"dikta-{MaxFiles - 1}.log");
+            if (File.Exists(oldest))
+            {
+                File.Delete(oldest);
+            }
+
+            // Rotate remaining files upward: dikta-{i} → dikta-{i + 1}
+            // for i from MaxFiles - 2 down to 0. Slots stay within the retention window.
+            for (int i = MaxFiles - 2; i >= 0; i--)
             {
                 string src = Path.Combine(_logDir, $"dikta-{i}.log");
                 string dst = Path.Combine(_logDir, $"dikta-{i + 1}.log");
-
-                // Drop the destination if it would exceed the maximum slot.
-                if (i + 1 >= MaxFiles && File.Exists(dst))
-                {
-                    File.Delete(dst);
-                }
 
                 if (File.Exists(src))
                 {
